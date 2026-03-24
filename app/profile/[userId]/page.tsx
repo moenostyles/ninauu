@@ -126,11 +126,18 @@ export default function ProfilePage() {
       .from('avatars')
       .upload(path, file, { upsert: true, contentType: file.type })
 
-    if (!uploadError) {
+    if (uploadError) {
+      alert('アップロード失敗: ' + uploadError.message)
+    } else {
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+      // キャッシュバスター付きURL
       const avatarUrl = urlData.publicUrl + '?t=' + Date.now()
-      await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id)
-      setProfile((p) => p ? { ...p, avatar_url: avatarUrl } : p)
+      const { error: updateError } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id)
+      if (updateError) {
+        alert('プロフィール更新失敗: ' + updateError.message)
+      } else {
+        setProfile((p) => p ? { ...p, avatar_url: avatarUrl } : p)
+      }
     }
 
     setUploadingAvatar(false)
