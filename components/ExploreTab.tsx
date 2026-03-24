@@ -1,12 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Globe, Users, ChevronDown } from 'lucide-react'
+import { Globe, Users, ChevronDown, Search } from 'lucide-react'
 import Link from 'next/link'
 
 interface Props {
   currentUserId: string
+}
+
+interface UserResult {
+  id: string
+  display_name: string | null
+  username: string | null
+  avatar_url: string | null
+  is_following: boolean
 }
 
 interface ExploreItem {
@@ -63,6 +71,12 @@ export default function ExploreTab({ currentUserId }: Props) {
   const [filter, setFilter] = useState<'all' | 'following'>('all')
   const [expandedPackId, setExpandedPackId] = useState<string | null>(null)
   const [packItems, setPackItems] = useState<Record<string, { gear_name: string; brand: string; weight_g: number; category: string; quantity: number }[]>>({})
+
+  // User search
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<UserResult[]>([])
+  const [searching, setSearching] = useState(false)
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     loadExplore()
@@ -175,6 +189,49 @@ export default function ExploreTab({ currentUserId }: Props) {
     setLoading(false)
   }
 
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    if (!q.trim()) { setSearchResults([]); return }
+    setSearching(true)
+    searchTimeout.current = setTimeout(async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, display_name, username, avatar_url')
+        .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
+        .neq('id', currentUserId)
+        .limit(10)
+
+      if (data && data.length > 0) {
+        const ids = data.map((p: { id: string }) => p.id)
+        const { data: followData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', currentUserId)
+          .in('following_id', ids)
+        const followingSet = new Set((followData ?? []).map((f: { following_id: string }) => f.following_id))
+        setSearchResults(data.map((p: { id: string; display_name: string | null; username: string | null; avatar_url: string | null }) => ({
+          ...p,
+          is_following: followingSet.has(p.id),
+        })))
+      } else {
+        setSearchResults([])
+      }
+      setSearching(false)
+    }, 300)
+  }
+
+  const handleToggleFollow = async (targetId: string, isFollowing: boolean) => {
+    if (isFollowing) {
+      await supabase.from('follows').delete().eq('follower_id', currentUserId).eq('following_id', targetId)
+    } else {
+      await supabase.from('follows').insert({ follower_id: currentUserId, following_id: targetId })
+    }
+    setSearchResults((prev) =>
+      prev.map((u) => u.id === targetId ? { ...u, is_following: !isFollowing } : u)
+    )
+  }
+
   const loadPackItems = async (packId: string) => {
     if (packItems[packId]) return
     const { data } = await supabase
@@ -203,6 +260,59 @@ export default function ExploreTab({ currentUserId }: Props) {
 
   return (
     <div>
+      {/* User search */}
+      <div className="relative mb-4">
+        <Search size={14} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none" />
+        <input
+          type="text"
+          placeholder="ユーザーを検索（名前 / ユーザーネーム）"
+          value={searchQuery}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="w-full border border-line rounded-xl pl-8 pr-4 py-2 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-ink"
+        />
+      </div>
+
+      {/* Search results */}
+      {searchQuery.trim() && (
+        <div className="mb-4 space-y-1">
+          {searching ? (
+            <p className="text-xs text-ink-3 px-1">検索中…</p>
+          ) : searchResults.length === 0 ? (
+            <p className="text-xs text-ink-3 px-1">ユーザーが見つかりませんでした。</p>
+          ) : (
+            searchResults.map((u) => (
+              <div key={u.id} className="bg-white border border-line rounded-xl px-4 py-3 flex items-center gap-3">
+                <Link href={`/profile/${u.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-70 transition-opacity">
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-fill-2 flex items-center justify-center shrink-0">
+                    {u.avatar_url ? (
+                      <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-bold text-ink-2">
+                        {(u.display_name ?? u.username ?? '?').charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink truncate">{u.display_name ?? u.username ?? 'Anonymous'}</p>
+                    {u.username && <p className="text-xs text-ink-3">@{u.username}</p>}
+                  </div>
+                </Link>
+                <button
+                  onClick={() => handleToggleFollow(u.id, u.is_following)}
+                  className={`shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                    u.is_following
+                      ? 'border border-line text-ink-3 hover:bg-fill'
+                      : 'bg-ink text-surface hover:bg-ink-2'
+                  }`}
+                >
+                  {u.is_following ? 'Following' : 'Follow'}
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       {/* Filter tabs */}
       <div className="flex gap-2 mb-4">
         <button
