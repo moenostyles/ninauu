@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
+import NotificationBell from '@/components/NotificationBell'
 
 export default function Header() {
   const { user } = useAuth()
@@ -24,6 +25,7 @@ export default function Header() {
 
         {user && (
           <div className="flex items-center gap-3">
+            <NotificationBell userId={user.id} />
             <Link href={`/profile/${user.id}`} className="w-8 h-8 rounded-full overflow-hidden bg-ink-2 flex items-center justify-center shrink-0 hover:opacity-75 transition-opacity">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="" className="w-full h-full object-cover" />

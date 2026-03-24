@@ -6,6 +6,74 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { Profile, Trip, SavedPack, TripItem } from '@/types'
 import { Globe, Users, Lock, ChevronDown, Pencil, Check, X, ArrowLeft, Camera } from 'lucide-react'
+import Link from 'next/link'
+
+interface FollowUser {
+  id: string
+  display_name: string | null
+  username: string | null
+  avatar_url: string | null
+}
+
+function FollowListModal({
+  title,
+  userIds,
+  onClose,
+}: {
+  title: string
+  userIds: string[]
+  onClose: () => void
+}) {
+  const [users, setUsers] = useState<FollowUser[]>([])
+
+  useEffect(() => {
+    if (userIds.length === 0) { setUsers([]); return }
+    supabase
+      .from('profiles')
+      .select('id, display_name, username, avatar_url')
+      .in('id', userIds)
+      .then(({ data }) => setUsers((data ?? []) as FollowUser[]))
+  }, [userIds.join(',')])
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-line">
+          <p className="font-semibold text-sm text-ink">{title}</p>
+          <button onClick={onClose} className="text-ink-3 hover:text-ink"><X size={16} strokeWidth={2} /></button>
+        </div>
+        <div className="max-h-72 overflow-y-auto">
+          {users.length === 0 ? (
+            <p className="text-xs text-ink-3 text-center py-8">No users yet.</p>
+          ) : (
+            users.map((u) => (
+              <Link
+                key={u.id}
+                href={`/profile/${u.id}`}
+                onClick={onClose}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-fill transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-fill-2 flex items-center justify-center shrink-0">
+                  {u.avatar_url ? (
+                    <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-bold text-ink-2">
+                      {(u.display_name ?? u.username ?? '?').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-ink">{u.display_name ?? u.username ?? 'Anonymous'}</p>
+                  {u.username && <p className="text-xs text-ink-3">@{u.username}</p>}
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function fmtWeight(g: number) {
   return g >= 1000 ? `${(g / 1000).toFixed(2)}kg` : `${g}g`
@@ -37,6 +105,10 @@ export default function ProfilePage() {
   const [packs, setPacks] = useState<SavedPack[]>([])
   const [followerCount, setFollowerCount] = useState(0)
   const [followingCount, setFollowingCount] = useState(0)
+  const [followerIds, setFollowerIds] = useState<string[]>([])
+  const [followingIds, setFollowingIds] = useState<string[]>([])
+  const [showFollowers, setShowFollowers] = useState(false)
+  const [showFollowing, setShowFollowing] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [followLoading, setFollowLoading] = useState(false)
@@ -62,15 +134,20 @@ export default function ProfilePage() {
       supabase.from('profiles').select('*').eq('id', userId).single(),
       supabase.from('trips').select('*').eq('user_id', userId).order('start_date', { ascending: false }),
       supabase.from('saved_packs').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-      supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', userId),
-      supabase.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', userId),
+      supabase.from('follows').select('follower_id').eq('following_id', userId),
+      supabase.from('follows').select('following_id').eq('follower_id', userId),
     ])
 
     if (profileRes.data) setProfile(profileRes.data as Profile)
     if (tripsRes.data) setTrips(tripsRes.data as Trip[])
     if (packsRes.data) setPacks(packsRes.data as SavedPack[])
-    setFollowerCount(followersRes.count ?? 0)
-    setFollowingCount(followingRes.count ?? 0)
+
+    const fwrIds = (followersRes.data ?? []).map((r: { follower_id: string }) => r.follower_id)
+    const fwgIds = (followingRes.data ?? []).map((r: { following_id: string }) => r.following_id)
+    setFollowerIds(fwrIds)
+    setFollowingIds(fwgIds)
+    setFollowerCount(fwrIds.length)
+    setFollowingCount(fwgIds.length)
 
     if (user && !isOwn) {
       const { data } = await supabase
@@ -267,8 +344,12 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div className="flex gap-4 mt-1 text-xs text-ink-3">
-                  <span><strong className="text-ink">{followerCount}</strong> followers</span>
-                  <span><strong className="text-ink">{followingCount}</strong> following</span>
+                  <button onClick={() => setShowFollowers(true)} className="hover:text-ink transition-colors">
+                    <strong className="text-ink">{followerCount}</strong> followers
+                  </button>
+                  <button onClick={() => setShowFollowing(true)} className="hover:text-ink transition-colors">
+                    <strong className="text-ink">{followingCount}</strong> following
+                  </button>
                 </div>
               </>
             )}
@@ -386,6 +467,21 @@ export default function ProfilePage() {
         <div className="text-center py-12">
           <p className="text-ink-3 text-sm">No public content yet.</p>
         </div>
+      )}
+
+      {showFollowers && (
+        <FollowListModal
+          title={`Followers · ${followerCount}`}
+          userIds={followerIds}
+          onClose={() => setShowFollowers(false)}
+        />
+      )}
+      {showFollowing && (
+        <FollowListModal
+          title={`Following · ${followingCount}`}
+          userIds={followingIds}
+          onClose={() => setShowFollowing(false)}
+        />
       )}
     </div>
   )
