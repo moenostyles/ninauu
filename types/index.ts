@@ -1,0 +1,89 @@
+// ── Category hierarchy (based on Moonlight Gear) ──────────────────────────
+export const CATEGORY_TREE: Record<string, string[]> = {
+  'Tent & Tarp':         ['Tent', 'Tarp'],
+  'Backpack':            ['Backpack', 'Sacoche & Waist Pouch', 'Pack Accessories'],
+  'Sleep':               ['Sleeping Bag', 'Sleeping Mat', 'Pillow', 'Bivy', 'Hammock', 'Ground Sheet'],
+  'Tops':                ['T-shirt & Shirt', 'Shell Jacket', 'Insulation Jacket'],
+  'Bottoms':             ['Pants & Shorts', 'Shell Pants', 'Insulation Pants'],
+  'Apparel Accessories': ['Footwear', 'Headgear', 'Gloves', 'Socks', 'Eyewear'],
+  'Cookware':            ['Cooker', 'Cutlery', 'Stove & Fuel', 'Table', 'Bottle & Filter', 'Fire Pit'],
+  'Field Gear':          ['Stuff Sack', 'Headlamp', 'GPS & Communication', 'Power Bank', 'Knife & Tool', 'Umbrella', 'Emergency'],
+  'Others':              ['Others'],
+}
+
+export const PARENT_CATEGORIES = Object.keys(CATEGORY_TREE) as string[]
+
+// Flat list of all leaf categories
+export const CATEGORIES = Object.values(CATEGORY_TREE).flat() as string[]
+
+// Derive parent from child category
+export function parentOf(category: string): string {
+  for (const [parent, children] of Object.entries(CATEGORY_TREE)) {
+    if (children.includes(category)) return parent
+  }
+  return 'Others'
+}
+
+export interface Gear {
+  id: string
+  name: string
+  brand: string
+  weight_g: number
+  category: string
+  created_at: string
+}
+
+export interface PackEntry {
+  gear: Gear
+  quantity: number
+}
+
+export interface SavedPack {
+  id: string
+  name: string
+  created_at: string
+  visibility?: string
+}
+
+export interface SavedPackItem {
+  id: string
+  pack_id: string
+  gear_id: string | null
+  gear_name: string
+  brand: string
+  weight_g: number
+  category: string
+  quantity: number
+}
+
+export interface WishItem {
+  id: string
+  name: string
+  brand: string
+  weight_g: number
+  category: string
+  memo: string
+  catalog_id: string | null
+  created_at: string
+}
+
+export interface Trip {
+  id: string
+  destination: string
+  start_date: string
+  end_date: string
+  total_weight_g: number
+  memo: string
+  rating: number
+  created_at: string
+  visibility?: string
+}
+
+export interface TripItem {
+  id: string
+  trip_id: string
+  gear_name: string
+  brand: string
+  weight_g: number
+  category: string
+}

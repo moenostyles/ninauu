@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* ── Ninauu Design Tokens ── */
+@theme {
+  /* Brand */
+  --color-brand:      #E64A19;
+  --color-brand-dark: #C43E15;
+  --color-brand-soft: #FFF0EC;
+
+  /* Ink (text / dark surfaces) */
+  --color-ink:   #1A1A1A;
+  --color-ink-2: #3D3D3D;
+  --color-ink-3: #909090;
+
+  /* Fill (backgrounds) */
+  --color-fill:   #F5F5F5;
+  --color-fill-2: #EBEBEB;
+
+  /* Line (borders / separators) */
+  --color-line: #DEDEDE;
+
+  /* Surface */
+  --color-surface: #FFFFFF;
+}
+
+/* ── Base ── */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: #F5F5F5;
+  color: #1C1C1E;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Inter', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular numbers — weight/quantity 表示を揃える */
+.nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}

@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sL \"https://lighterpack.com/r/gek98q\")",
+      "Bash(curl -sL -A \"Mozilla/5.0\" \"https://lighterpack.com/r/gek98q\")",
+      "Bash(curl -sL -A \"Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36\" \"https://lighterpack.com\")",
+      "Bash(curl -sL -A \"Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36\" \"https://lighterpack.com/r/9rqbp4\")",
+      "Bash(curl -sL -A \"Mozilla/5.0\" \"https://lighterpack.com/r/abc1de\")",
+      "Bash(node scripts/import-lighterpack.mjs)",
+      "Bash(curl -sL -A \"Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36\" \"https://lighterpack.com/r/1ewzt3\")",
+      "Bash(curl -sL -A \"Mozilla/5.0\" \"https://lighterpack.com/r/1ewzt3\")",
+      "WebFetch(domain:moonlightgear.jp)",
+      "WebFetch(domain:www.moonlightgear.jp)",
+      "WebSearch",
+      "WebFetch(domain:moonlight-gear.com)",
+      "Bash(pbcopy)",
+      "Bash(npx tsc:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
