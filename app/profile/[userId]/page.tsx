@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useParams } from 'next/navigation'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { Profile, Trip, SavedPack, TripItem } from '@/types'
-import { Globe, Users, Lock, ChevronDown, Pencil, Check, X } from 'lucide-react'
+import { Globe, Users, Lock, ChevronDown, Pencil, Check, X, ArrowLeft, Camera } from 'lucide-react'
 
 function fmtWeight(g: number) {
   return g >= 1000 ? `${(g / 1000).toFixed(2)}kg` : `${g}g`
@@ -29,6 +29,7 @@ function VisibilityIcon({ v }: { v?: string }) {
 export default function ProfilePage() {
   const { userId } = useParams<{ userId: string }>()
   const { user } = useAuth()
+  const router = useRouter()
   const isOwn = user?.id === userId
 
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -46,11 +47,13 @@ export default function ProfilePage() {
   const [editUsername, setEditUsername] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
 
-  // Expanded trip state
+  // Avatar upload
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+
+  // Expanded trip/pack state
   const [expandedTripId, setExpandedTripId] = useState<string | null>(null)
   const [tripItemsCache, setTripItemsCache] = useState<Record<string, TripItem[]>>({})
-
-  // Expanded pack state
   const [expandedPackId, setExpandedPackId] = useState<string | null>(null)
   const [packItemsCache, setPackItemsCache] = useState<Record<string, { gear_name: string; brand: string; weight_g: number; category: string; quantity: number }[]>>({})
 
@@ -82,9 +85,7 @@ export default function ProfilePage() {
     setLoading(false)
   }, [userId, user, isOwn])
 
-  useEffect(() => {
-    loadProfile()
-  }, [loadProfile])
+  useEffect(() => { loadProfile() }, [loadProfile])
 
   const handleFollow = async () => {
     if (!user) return
@@ -113,6 +114,29 @@ export default function ProfilePage() {
     setSavingProfile(false)
   }
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    setUploadingAvatar(true)
+
+    const ext = file.name.split('.').pop()
+    const path = `${user.id}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true, contentType: file.type })
+
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+      const avatarUrl = urlData.publicUrl + '?t=' + Date.now()
+      await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id)
+      setProfile((p) => p ? { ...p, avatar_url: avatarUrl } : p)
+    }
+
+    setUploadingAvatar(false)
+    e.target.value = ''
+  }
+
   const loadTripItems = async (tripId: string) => {
     if (tripItemsCache[tripId]) return
     const { data } = await supabase.from('trip_items').select('*').eq('trip_id', tripId).order('created_at')
@@ -137,16 +161,53 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto px-5 py-6 space-y-6">
+      {/* Back button */}
+      <button
+        onClick={() => router.push('/')}
+        className="flex items-center gap-1.5 text-sm text-ink-3 hover:text-ink transition-colors"
+      >
+        <ArrowLeft size={16} strokeWidth={2} /> ホームに戻る
+      </button>
+
       {/* Profile header */}
       <div className="bg-white border border-line rounded-2xl px-5 py-5">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-full overflow-hidden bg-fill-2 flex items-center justify-center shrink-0">
-            {profile.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-xl font-bold text-ink-2">{initial}</span>
+
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            <div className="w-14 h-14 rounded-full overflow-hidden bg-fill-2 flex items-center justify-center">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xl font-bold text-ink-2">{initial}</span>
+              )}
+            </div>
+            {isOwn && (
+              <>
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-ink text-surface flex items-center justify-center hover:bg-ink-2 transition-colors disabled:opacity-40"
+                  title="画像を変更"
+                >
+                  {uploadingAvatar ? (
+                    <span className="text-[8px]">…</span>
+                  ) : (
+                    <Camera size={11} strokeWidth={2} />
+                  )}
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </>
             )}
           </div>
+
+          {/* Name / edit */}
           <div className="flex-1 min-w-0">
             {editingProfile ? (
               <div className="space-y-2">
@@ -232,12 +293,8 @@ export default function ProfilePage() {
                 <div
                   className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-fill transition-colors"
                   onClick={() => {
-                    if (expandedTripId === trip.id) {
-                      setExpandedTripId(null)
-                    } else {
-                      setExpandedTripId(trip.id)
-                      loadTripItems(trip.id)
-                    }
+                    if (expandedTripId === trip.id) { setExpandedTripId(null) }
+                    else { setExpandedTripId(trip.id); loadTripItems(trip.id) }
                   }}
                 >
                   <div className="flex-1 min-w-0">
@@ -251,11 +308,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <VisibilityIcon v={trip.visibility} />
-                  <ChevronDown
-                    size={14}
-                    strokeWidth={2}
-                    className={`text-ink-3 transition-transform duration-200 ${expandedTripId === trip.id ? 'rotate-180' : ''}`}
-                  />
+                  <ChevronDown size={14} strokeWidth={2} className={`text-ink-3 transition-transform duration-200 ${expandedTripId === trip.id ? 'rotate-180' : ''}`} />
                 </div>
                 {expandedTripId === trip.id && (
                   <div className="border-t border-line px-4 py-3 bg-fill space-y-1.5">
@@ -293,21 +346,13 @@ export default function ProfilePage() {
                 <div
                   className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-fill transition-colors"
                   onClick={() => {
-                    if (expandedPackId === pack.id) {
-                      setExpandedPackId(null)
-                    } else {
-                      setExpandedPackId(pack.id)
-                      loadPackItems(pack.id)
-                    }
+                    if (expandedPackId === pack.id) { setExpandedPackId(null) }
+                    else { setExpandedPackId(pack.id); loadPackItems(pack.id) }
                   }}
                 >
                   <span className="font-semibold text-sm text-ink flex-1 truncate">{pack.name}</span>
                   <VisibilityIcon v={pack.visibility} />
-                  <ChevronDown
-                    size={14}
-                    strokeWidth={2}
-                    className={`text-ink-3 transition-transform duration-200 ${expandedPackId === pack.id ? 'rotate-180' : ''}`}
-                  />
+                  <ChevronDown size={14} strokeWidth={2} className={`text-ink-3 transition-transform duration-200 ${expandedPackId === pack.id ? 'rotate-180' : ''}`} />
                 </div>
                 {expandedPackId === pack.id && (
                   <div className="border-t border-line px-4 py-3 bg-fill space-y-1.5">
