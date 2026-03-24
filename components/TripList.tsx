@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { X, ChevronDown, Pencil, Globe, Lock } from 'lucide-react'
+import { X, ChevronDown, Pencil, Globe, Lock, Users } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { Trip, TripItem } from '@/types'
+import { Trip, TripItem, Visibility } from '@/types'
 import EditTripModal from '@/components/EditTripModal'
 
 interface Props {
@@ -25,6 +25,18 @@ function formatDateRange(start: string, end: string) {
 
 function fmtWeight(g: number) {
   return g >= 1000 ? `${(g / 1000).toFixed(2)}kg` : `${g}g`
+}
+
+function nextVisibility(v: Visibility): Visibility {
+  if (v === 'public') return 'followers'
+  if (v === 'followers') return 'private'
+  return 'public'
+}
+
+function VisibilityBadge({ visibility }: { visibility: Visibility }) {
+  if (visibility === 'public') return <><Globe size={11} strokeWidth={2} /> Public</>
+  if (visibility === 'followers') return <><Users size={11} strokeWidth={2} /> Followers</>
+  return <><Lock size={11} strokeWidth={2} /> Private</>
 }
 
 function Stars({ rating }: { rating: number }) {
@@ -111,18 +123,14 @@ export default function TripList({ trips, onRefresh }: Props) {
                 <button
                   onClick={async (e) => {
                     e.stopPropagation()
-                    const newVis = trip.visibility === 'public' ? 'private' : 'public'
+                    const newVis = nextVisibility(trip.visibility ?? 'private')
                     await supabase.from('trips').update({ visibility: newVis }).eq('id', trip.id)
                     onRefresh()
                   }}
                   className="text-xs px-2 py-0.5 rounded-full border border-line text-ink-3 hover:border-ink hover:text-ink transition-colors shrink-0 flex items-center gap-1"
                   title="Toggle visibility"
                 >
-                  {trip.visibility === 'public' ? (
-                    <><Globe size={11} strokeWidth={2} /> Public</>
-                  ) : (
-                    <><Lock size={11} strokeWidth={2} /> Private</>
-                  )}
+                  <VisibilityBadge visibility={trip.visibility ?? 'private'} />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); setEditingTrip(trip) }}

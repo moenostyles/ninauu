@@ -17,7 +17,11 @@
       "Bash(npx tsc:*)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Bash(gh --version)",
+      "Bash(brew install:*)"
     ]
   }
 }

@@ -42,7 +42,8 @@ export interface SavedPack {
   id: string
   name: string
   created_at: string
-  visibility?: string
+  user_id?: string
+  visibility?: Visibility
 }
 
 export interface SavedPackItem {
@@ -76,7 +77,8 @@ export interface Trip {
   memo: string
   rating: number
   created_at: string
-  visibility?: string
+  user_id?: string
+  visibility?: Visibility
 }
 
 export interface TripItem {
@@ -86,4 +88,20 @@ export interface TripItem {
   brand: string
   weight_g: number
   category: string
+}
+
+export type Visibility = 'public' | 'followers' | 'private'
+
+export interface Profile {
+  id: string
+  username: string | null
+  display_name: string | null
+  avatar_url: string | null
+  created_at: string
+}
+
+export interface Follow {
+  follower_id: string
+  following_id: string
+  created_at: string
 }

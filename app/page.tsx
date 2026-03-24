@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
-import { Gear, WishItem, Trip, PackEntry, SavedPack, CATEGORY_TREE, PARENT_CATEGORIES, parentOf } from '@/types'
+import { Gear, WishItem, Trip, PackEntry, SavedPack, Visibility, CATEGORY_TREE, PARENT_CATEGORIES, parentOf } from '@/types'
 import GearForm from '@/components/GearForm'
 import GearList from '@/components/GearList'
 import PackList from '@/components/PackList'
@@ -16,10 +16,11 @@ import WishListForm from '@/components/WishListForm'
 import WishListSearchFromDB from '@/components/WishListSearchFromDB'
 import TripForm from '@/components/TripForm'
 import TripList from '@/components/TripList'
+import ExploreTab from '@/components/ExploreTab'
 import AuthScreen from '@/components/AuthScreen'
 
 type AddMode = null | 'search' | 'manual'
-type Tab = 'gear' | 'pack' | 'wish' | 'trips'
+type Tab = 'gear' | 'pack' | 'wish' | 'trips' | 'explore'
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth()
@@ -80,7 +81,7 @@ export default function Home() {
     setPackItems((prev) => prev.map((e) => e.gear.id === gearId ? { ...e, quantity } : e))
   }
 
-  const handleSavePack = async (name: string, visibility: 'public' | 'private' = 'private') => {
+  const handleSavePack = async (name: string, visibility: Visibility = 'private') => {
     const { data, error } = await supabase.from('saved_packs').insert({ name, visibility }).select('id').single()
     if (error || !data) return
     await supabase.from('saved_pack_items').insert(
@@ -92,7 +93,7 @@ export default function Home() {
     fetchSavedPacks()
   }
 
-  const handleTogglePackVisibility = async (packId: string, visibility: 'public' | 'private') => {
+  const handleTogglePackVisibility = async (packId: string, visibility: Visibility) => {
     await supabase.from('saved_packs').update({ visibility }).eq('id', packId)
     fetchSavedPacks()
   }
@@ -126,10 +127,11 @@ export default function Home() {
 
   // ── Tab config ──
   const tabs: { key: Tab; label: string; badge?: number }[] = [
-    { key: 'gear',  label: 'Gear'  },
-    { key: 'pack',  label: 'Pack',  badge: packGearCount || undefined },
-    { key: 'wish',  label: 'Wish',  badge: wishItems.length || undefined },
-    { key: 'trips', label: 'Trips', badge: trips.length || undefined },
+    { key: 'gear',    label: 'Gear'    },
+    { key: 'pack',    label: 'Pack',    badge: packGearCount || undefined },
+    { key: 'wish',    label: 'Wish',    badge: wishItems.length || undefined },
+    { key: 'trips',   label: 'Trips',   badge: trips.length || undefined },
+    { key: 'explore', label: 'Explore' },
   ]
 
   if (authLoading) {
@@ -311,6 +313,11 @@ export default function Home() {
           )}
           <TripList trips={trips} onRefresh={fetchTrips} />
         </div>
+      )}
+
+      {/* ── Explore ── */}
+      {activeTab === 'explore' && (
+        <ExploreTab currentUserId={user.id} />
       )}
     </div>
   )

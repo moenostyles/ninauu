@@ -1,22 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import { X, ChevronDown, Globe, Lock } from 'lucide-react'
-import { Gear, PackEntry, SavedPack } from '@/types'
+import { X, ChevronDown, Globe, Lock, Users } from 'lucide-react'
+import { Gear, PackEntry, SavedPack, Visibility } from '@/types'
 
 interface Props {
   items: PackEntry[]
   savedPacks: SavedPack[]
   onRemove: (gear: Gear) => void
   onUpdateQuantity: (gearId: string, quantity: number) => void
-  onSave: (name: string, visibility: 'public' | 'private') => Promise<void>
+  onSave: (name: string, visibility: Visibility) => Promise<void>
   onLoad: (packId: string) => void
   onDeleteSaved: (packId: string) => void
-  onToggleVisibility: (packId: string, visibility: 'public' | 'private') => void
+  onToggleVisibility: (packId: string, visibility: Visibility) => void
 }
 
 function fmtWeight(g: number) {
   return g >= 1000 ? `${(g / 1000).toFixed(2)}kg` : `${g}g`
+}
+
+function nextVisibility(v: Visibility): Visibility {
+  if (v === 'public') return 'followers'
+  if (v === 'followers') return 'private'
+  return 'public'
+}
+
+function VisibilityBadge({ visibility }: { visibility: Visibility }) {
+  if (visibility === 'public') return <><Globe size={11} strokeWidth={2} /> Public</>
+  if (visibility === 'followers') return <><Users size={11} strokeWidth={2} /> Followers</>
+  return <><Lock size={11} strokeWidth={2} /> Private</>
 }
 
 export default function PackList({ items, savedPacks, onRemove, onUpdateQuantity, onSave, onLoad, onDeleteSaved, onToggleVisibility }: Props) {
@@ -24,7 +36,7 @@ export default function PackList({ items, savedPacks, onRemove, onUpdateQuantity
   const [saveName, setSaveName] = useState('')
   const [saving, setSaving] = useState(false)
   const [showSavedPacks, setShowSavedPacks] = useState(false)
-  const [packVisibility, setPackVisibility] = useState<'private' | 'public'>('private')
+  const [packVisibility, setPackVisibility] = useState<Visibility>('private')
 
   const totalWeight = items.reduce((s, e) => s + e.gear.weight_g * e.quantity, 0)
 
@@ -77,15 +89,11 @@ export default function PackList({ items, savedPacks, onRemove, onUpdateQuantity
               <div key={pack.id} className="flex items-center gap-2 bg-surface rounded-xl px-3 py-2 border border-line">
                 <span className="flex-1 text-sm font-medium text-ink truncate">{pack.name}</span>
                 <button
-                  onClick={() => onToggleVisibility(pack.id, pack.visibility === 'public' ? 'private' : 'public')}
+                  onClick={() => onToggleVisibility(pack.id, nextVisibility(pack.visibility ?? 'private'))}
                   className="text-xs px-2 py-0.5 rounded-full border border-line text-ink-3 hover:border-ink transition-colors flex items-center gap-1"
                   title="Toggle visibility"
                 >
-                  {pack.visibility === 'public' ? (
-                    <><Globe size={11} strokeWidth={2} /> Public</>
-                  ) : (
-                    <><Lock size={11} strokeWidth={2} /> Private</>
-                  )}
+                  <VisibilityBadge visibility={pack.visibility ?? 'private'} />
                 </button>
                 <button
                   onClick={() => { onLoad(pack.id); setShowSavedPacks(false) }}
@@ -119,14 +127,10 @@ export default function PackList({ items, savedPacks, onRemove, onUpdateQuantity
           />
           <button
             type="button"
-            onClick={() => setPackVisibility(p => p === 'private' ? 'public' : 'private')}
+            onClick={() => setPackVisibility(p => nextVisibility(p))}
             className="px-3 py-2 border border-line rounded-xl text-xs text-ink-3 hover:bg-fill transition-colors whitespace-nowrap flex items-center gap-1"
           >
-            {packVisibility === 'public' ? (
-              <><Globe size={11} strokeWidth={2} /> Public</>
-            ) : (
-              <><Lock size={11} strokeWidth={2} /> Private</>
-            )}
+            <VisibilityBadge visibility={packVisibility} />
           </button>
           <button
             onClick={handleSave}

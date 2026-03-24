@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 
@@ -23,13 +24,13 @@ export default function Header() {
 
         {user && (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-ink-2 flex items-center justify-center shrink-0">
+            <Link href={`/profile/${user.id}`} className="w-8 h-8 rounded-full overflow-hidden bg-ink-2 flex items-center justify-center shrink-0 hover:opacity-75 transition-opacity">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-sm font-bold text-surface">{initials}</span>
               )}
-            </div>
+            </Link>
             <button
               onClick={handleLogout}
               className="text-xs text-ink-3 hover:text-surface transition-colors whitespace-nowrap"
