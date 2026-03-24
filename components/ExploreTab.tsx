@@ -265,7 +265,7 @@ export default function ExploreTab({ currentUserId }: Props) {
         <Search size={14} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none" />
         <input
           type="text"
-          placeholder="ユーザーを検索（名前 / ユーザーネーム）"
+          placeholder="Search users by name or username"
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="w-full border border-line rounded-xl pl-8 pr-4 py-2 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-ink"
@@ -276,9 +276,9 @@ export default function ExploreTab({ currentUserId }: Props) {
       {searchQuery.trim() && (
         <div className="mb-4 space-y-1">
           {searching ? (
-            <p className="text-xs text-ink-3 px-1">検索中…</p>
+            <p className="text-xs text-ink-3 px-1">Searching…</p>
           ) : searchResults.length === 0 ? (
-            <p className="text-xs text-ink-3 px-1">ユーザーが見つかりませんでした。</p>
+            <p className="text-xs text-ink-3 px-1">No users found.</p>
           ) : (
             searchResults.map((u) => (
               <div key={u.id} className="bg-white border border-line rounded-xl px-4 py-3 flex items-center gap-3">
@@ -336,7 +336,7 @@ export default function ExploreTab({ currentUserId }: Props) {
       {allItems.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-ink-3 text-sm">
-            {filter === 'following' ? 'フォロー中のユーザーの投稿はありません。' : 'まだ公開コンテンツがありません。'}
+            {filter === 'following' ? 'No posts from people you follow.' : 'No public content yet.'}
           </p>
         </div>
       ) : (

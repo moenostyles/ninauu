@@ -127,14 +127,14 @@ export default function ProfilePage() {
       .upload(path, file, { upsert: true, contentType: file.type })
 
     if (uploadError) {
-      alert('アップロード失敗: ' + uploadError.message)
+      alert('Upload failed: ' + uploadError.message)
     } else {
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
-      // キャッシュバスター付きURL
+      // Cache-busting URL
       const avatarUrl = urlData.publicUrl + '?t=' + Date.now()
       const { error: updateError } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id)
       if (updateError) {
-        alert('プロフィール更新失敗: ' + updateError.message)
+        alert('Profile update failed: ' + updateError.message)
       } else {
         setProfile((p) => p ? { ...p, avatar_url: avatarUrl } : p)
       }
@@ -173,7 +173,7 @@ export default function ProfilePage() {
         onClick={() => router.push('/')}
         className="flex items-center gap-1.5 text-sm text-ink-3 hover:text-ink transition-colors"
       >
-        <ArrowLeft size={16} strokeWidth={2} /> ホームに戻る
+        <ArrowLeft size={16} strokeWidth={2} /> Back
       </button>
 
       {/* Profile header */}
@@ -195,7 +195,7 @@ export default function ProfilePage() {
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={uploadingAvatar}
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-ink text-surface flex items-center justify-center hover:bg-ink-2 transition-colors disabled:opacity-40"
-                  title="画像を変更"
+                  title="Change photo"
                 >
                   {uploadingAvatar ? (
                     <span className="text-[8px]">…</span>
@@ -384,7 +384,7 @@ export default function ProfilePage() {
 
       {trips.length === 0 && packs.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-ink-3 text-sm">まだ公開コンテンツがありません。</p>
+          <p className="text-ink-3 text-sm">No public content yet.</p>
         </div>
       )}
     </div>
