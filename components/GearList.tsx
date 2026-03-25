@@ -107,14 +107,14 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             <div className="flex items-center shrink-0">
               <button
                 onClick={() => setEditingGear(gear)}
-                className="w-11 h-11 flex items-center justify-center text-[#D1D5DB] hover:text-ink transition-colors"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#D1D5DB] hover:text-ink transition-colors"
                 aria-label="Edit gear"
               >
                 <Pencil size={13} strokeWidth={2} />
               </button>
               <button
                 onClick={() => handleDelete(gear.id)}
-                className="w-11 h-11 flex items-center justify-center text-[#D1D5DB] hover:text-red-400 transition-colors"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#D1D5DB] hover:text-red-400 transition-colors"
                 aria-label="Delete gear"
               >
                 <X size={14} strokeWidth={2} />

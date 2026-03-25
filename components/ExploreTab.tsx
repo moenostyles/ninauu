@@ -383,14 +383,14 @@ export default function ExploreTab({ currentUserId }: Props) {
           {filter === 'following' ? (
             <>
               <p className="text-3xl mb-3">👣</p>
-              <p className="text-sm font-medium text-ink">フォロー中のユーザーの投稿はまだありません</p>
-              <p className="text-xs text-ink-3 mt-1">他のハイカーをフォローして、パッキングリストを参考にしましょう</p>
+              <p className="text-sm font-medium text-ink">No posts from people you follow yet</p>
+              <p className="text-xs text-ink-3 mt-1">Follow other hikers to see their packing lists here</p>
             </>
           ) : (
             <>
               <p className="text-3xl mb-3">🏕️</p>
-              <p className="text-sm font-medium text-ink">他のハイカーのパッキングリストを閲覧できます</p>
-              <p className="text-xs text-ink-3 mt-1">公開されたパックやトリップがここに表示されます</p>
+              <p className="text-sm font-medium text-ink">Browse packing lists from other hikers</p>
+              <p className="text-xs text-ink-3 mt-1">Public packs and trips will appear here</p>
             </>
           )}
         </div>

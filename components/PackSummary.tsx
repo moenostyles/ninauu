@@ -33,7 +33,7 @@ function VisibilityLabel({ v }: { v: Visibility }) {
 }
 
 export default function PackSummary({ items, savedPacks, onRemove, onClearAll, onSave, onLoad, onDeleteSaved, onToggleVisibility }: Props) {
-  const { fmt: fmtWeight } = useWeightUnit()
+  const { fmt: fmtWeight, unit } = useWeightUnit()
   const [showSaveInput, setShowSaveInput] = useState(false)
   const [saveName, setSaveName] = useState('')
   const [saveVisibility, setSaveVisibility] = useState<Visibility>('private')
@@ -74,8 +74,7 @@ export default function PackSummary({ items, savedPacks, onRemove, onClearAll, o
           </div>
           <p className="text-3xl font-bold mt-0.5 nums leading-none">{fmtWeight(totalWeight)}</p>
           <p className="text-[10px] text-ink-3 mt-1">
-            {items.reduce((s, e) => s + e.quantity, 0)} items
-            {totalWeight >= 1000 && <span className="ml-1.5 nums">{fmtWeightG(totalWeight)}</span>}
+            {(() => { const count = items.reduce((s, e) => s + e.quantity, 0); return `${count} ${count === 1 ? 'item' : 'items'}` })()}
           </p>
         </div>
 

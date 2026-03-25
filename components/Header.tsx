@@ -38,7 +38,7 @@ export default function Header() {
 
     load()
 
-    // Realtime: プロフィール更新を検知してアバターを即反映
+    // Realtime: detect profile updates and reflect avatar immediately
     const channel = supabase
       .channel('header-profile')
       .on('postgres_changes', {
