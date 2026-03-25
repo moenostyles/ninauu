@@ -6,50 +6,38 @@ import { useState, useEffect, useCallback } from 'react'
 import { Plus, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
-import { Gear, WishItem, Trip, PackEntry, SavedPack, Visibility, CATEGORY_TREE, PARENT_CATEGORIES, parentOf } from '@/types'
+import { Gear, Trip, PackEntry, SavedPack, Visibility, CATEGORY_TREE, PARENT_CATEGORIES, parentOf } from '@/types'
 import GearForm from '@/components/GearForm'
 import GearList from '@/components/GearList'
 import PackList from '@/components/PackList'
 import GearSearchFromDB from '@/components/GearSearchFromDB'
-import WishList from '@/components/WishList'
-import WishListForm from '@/components/WishListForm'
-import WishListSearchFromDB from '@/components/WishListSearchFromDB'
 import TripForm from '@/components/TripForm'
 import TripList from '@/components/TripList'
 import ExploreTab from '@/components/ExploreTab'
 import AuthScreen from '@/components/AuthScreen'
 
 type AddMode = null | 'search' | 'manual'
-type Tab = 'gear' | 'pack' | 'wish' | 'trips' | 'explore'
+type Tab = 'gear' | 'pack' | 'trips' | 'explore'
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth()
   const [gears, setGears] = useState<Gear[]>([])
-  const [wishItems, setWishItems] = useState<WishItem[]>([])
   const [trips, setTrips] = useState<Trip[]>([])
   const [savedPacks, setSavedPacks] = useState<SavedPack[]>([])
   const [packItems, setPackItems] = useState<PackEntry[]>([])
   const [addMode, setAddMode] = useState<AddMode>(null)
-  const [wishAddMode, setWishAddMode] = useState<AddMode>(null)
   const [showTripForm, setShowTripForm] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('gear')
   const [filterParent, setFilterParent] = useState<string>('All')
   const [filterChild, setFilterChild] = useState<string>('All')
   const [loading, setLoading] = useState(true)
   const [gearInitialName, setGearInitialName] = useState('')
-  const [wishInitialName, setWishInitialName] = useState('')
 
   const fetchGears = useCallback(async () => {
     if (!user) return
     const { data } = await supabase.from('gears').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
     if (data) setGears(data as Gear[])
     setLoading(false)
-  }, [user])
-
-  const fetchWishItems = useCallback(async () => {
-    if (!user) return
-    const { data } = await supabase.from('wishlist').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
-    if (data) setWishItems(data as WishItem[])
   }, [user])
 
   const fetchTrips = useCallback(async () => {
@@ -67,10 +55,9 @@ export default function Home() {
   useEffect(() => {
     if (!user) return
     fetchGears()
-    fetchWishItems()
     fetchTrips()
     fetchSavedPacks()
-  }, [user, fetchGears, fetchWishItems, fetchTrips, fetchSavedPacks])
+  }, [user, fetchGears, fetchTrips, fetchSavedPacks])
 
   const togglePackItem = (gear: Gear) => {
     setPackItems((prev) =>
@@ -133,7 +120,6 @@ export default function Home() {
   const tabs: { key: Tab; label: string; badge?: number }[] = [
     { key: 'gear',    label: 'Gear'    },
     { key: 'pack',    label: 'Pack',    badge: packGearCount || undefined },
-    { key: 'wish',    label: 'Wish',    badge: wishItems.length || undefined },
     { key: 'trips',   label: 'Trips',   badge: trips.length || undefined },
     { key: 'explore', label: 'Explore' },
   ]
@@ -155,7 +141,6 @@ export default function Home() {
             onClick={() => {
               setActiveTab(key)
               if (key === 'gear') setAddMode(null)
-              if (key === 'wish') setWishAddMode(null)
               if (key === 'trips') setShowTripForm(false)
             }}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
@@ -277,34 +262,6 @@ export default function Home() {
           onDeleteSaved={handleDeleteSavedPack}
           onToggleVisibility={handleTogglePackVisibility}
         />
-      )}
-
-      {/* ── Wish List ── */}
-      {activeTab === 'wish' && (
-        <div>
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => { setWishAddMode((p) => (p ? null : 'search')); setWishInitialName('') }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-ink text-surface text-sm font-medium rounded-xl hover:bg-ink-2 transition-colors"
-            >
-              {wishAddMode ? 'Cancel' : <><Plus size={15} strokeWidth={2.5} />Add</>}
-            </button>
-          </div>
-          {wishAddMode === 'search' && (
-            <div className="mb-4">
-              <WishListSearchFromDB
-                onSuccess={fetchWishItems}
-                onManual={(name) => { setWishInitialName(name); setWishAddMode('manual') }}
-              />
-            </div>
-          )}
-          {wishAddMode === 'manual' && (
-            <div className="mb-4">
-              <WishListForm onSuccess={() => { setWishAddMode(null); fetchWishItems() }} initialName={wishInitialName} />
-            </div>
-          )}
-          <WishList items={wishItems} onRefresh={() => { fetchWishItems(); fetchGears() }} />
-        </div>
       )}
 
       {/* ── Trips ── */}
