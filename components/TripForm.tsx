@@ -214,8 +214,9 @@ export default function TripForm({ packItems, onSuccess }: Props) {
             placeholder="Weather, what worked, what didn't..."
             value={form.memo}
             onChange={(e) => setForm((p) => ({ ...p, memo: e.target.value }))}
-            rows={3}
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink resize-none"
+            rows={2}
+            onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }}
+            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink resize-none overflow-hidden"
           />
         </div>
       </div>

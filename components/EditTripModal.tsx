@@ -88,7 +88,7 @@ export default function EditTripModal({ trip, onClose, onSave }: Props) {
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-3 mb-1">Notes</label>
-            <textarea value={form.memo} onChange={(e) => setForm(p => ({ ...p, memo: e.target.value }))} rows={3} className={`${inputClass} resize-none`} />
+            <textarea value={form.memo} onChange={(e) => setForm(p => ({ ...p, memo: e.target.value }))} rows={2} onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }} className={`${inputClass} resize-none overflow-hidden`} />
           </div>
           {error && <p className="text-red-500 text-xs">{error}</p>}
           <div className="flex gap-2 pt-2">

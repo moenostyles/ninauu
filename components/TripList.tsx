@@ -175,16 +175,16 @@ export default function TripList({ trips, onRefresh, onNewTrip }: Props) {
                     <div className="space-y-1.5">
                       {items.map((item) => (
                         <div key={item.id} className="flex items-center gap-2">
-                          <span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0 bg-fill-2 text-ink-3">
+                          <span className="text-[10px] px-2 py-0.5 rounded font-semibold shrink-0 bg-line text-ink">
                             {item.category}
                           </span>
-                          <span className="text-xs text-ink-2 flex-1 truncate">
+                          <span className="text-xs text-ink flex-1 truncate font-medium">
                             {item.gear_name}
                             {item.brand && (
-                              <span className="text-ink-3"> · {item.brand}</span>
+                              <span className="text-ink-3 font-normal"> · {item.brand}</span>
                             )}
                           </span>
-                          <span className="text-xs text-ink-3 shrink-0">{item.weight_g}g</span>
+                          <span className="text-xs text-ink-2 shrink-0 nums">{fmtWeight(item.weight_g)}</span>
                         </div>
                       ))}
                     </div>

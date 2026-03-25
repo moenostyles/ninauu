@@ -202,17 +202,17 @@ export default function Home() {
                 {addMode ? 'Cancel' : <><Plus size={15} strokeWidth={2.5} />Add</>}
               </button>
             </div>
-            {/* Child chips */}
+            {/* Child chips — 親より一段下のスタイル */}
             {filterParent !== 'All' && (
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5 pl-1">
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5 pl-4">
                 {['All', ...(CATEGORY_TREE[filterParent] ?? [])].map((c) => (
                   <button
                     key={c}
                     onClick={() => setFilterChild(c)}
-                    className={`px-2.5 py-0.5 text-xs rounded-full border transition-colors whitespace-nowrap shrink-0 ${
+                    className={`px-2.5 py-0.5 text-[11px] rounded-full border transition-colors whitespace-nowrap shrink-0 ${
                       filterChild === c
-                        ? 'bg-ink text-surface border-ink shadow-sm'
-                        : 'bg-surface text-ink-3 border-line hover:border-ink hover:bg-fill'
+                        ? 'bg-ink-2 text-surface border-ink-2 font-medium'
+                        : 'bg-surface text-ink-3 border-line hover:border-ink-3 hover:bg-fill'
                     }`}
                   >
                     {c}
