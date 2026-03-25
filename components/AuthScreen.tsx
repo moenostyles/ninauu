@@ -35,7 +35,7 @@ export default function AuthScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-fill flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm flex flex-col items-center">
 
         {/* Wordmark */}
