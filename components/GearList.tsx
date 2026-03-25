@@ -41,8 +41,8 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         return (
           <div
             key={gear.id}
-            className={`bg-surface rounded-2xl border px-4 py-3 flex items-center gap-3 transition-colors shadow-sm ${
-              inPack ? 'border-ink bg-fill' : 'border-line'
+            className={`bg-surface rounded-2xl border p-5 flex items-center gap-3 transition-colors shadow-sm ${
+              inPack ? 'border-ink bg-fill' : 'border-line hover:border-black'
             }`}
           >
             {/* Pack toggle */}
@@ -64,22 +64,18 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-sm text-ink truncate">{gear.name}</span>
-                {gear.brand && (
-                  <span className="text-xs text-ink-3">{gear.brand}</span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-fill-2 text-ink-3">
-                  {gear.category}
-                </span>
-              </div>
+              <p className="font-bold text-base text-ink truncate leading-snug">{gear.name}</p>
+              {gear.brand && (
+                <p className="text-sm text-gray-500 mt-0.5 truncate">{gear.brand}</p>
+              )}
+              <span className="inline-block text-xs px-2 py-0.5 rounded-full font-medium bg-fill-2 text-ink-3 mt-1.5">
+                {gear.category}
+              </span>
             </div>
 
-            {/* Weight */}
+            {/* Weight badge */}
             <div className="text-right shrink-0">
-              <span className="text-sm font-semibold text-ink-2 nums">
+              <span className="text-base font-bold text-ink nums">
                 {inPack && entry.quantity > 1 ? `${gear.weight_g * entry.quantity}g` : `${gear.weight_g}g`}
               </span>
               {inPack && entry.quantity > 1 && (

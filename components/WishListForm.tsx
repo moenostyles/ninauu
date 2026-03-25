@@ -92,6 +92,7 @@ export default function WishListForm({ onSuccess, initialName = '' }: Props) {
     }
 
     // 2. Add to wishlist with catalog reference
+    const { data: { user } } = await supabase.auth.getUser()
     const { error: wishError } = await supabase.from('wishlist').insert({
       name: form.name.trim(),
       brand: form.brand.trim(),
@@ -99,6 +100,7 @@ export default function WishListForm({ onSuccess, initialName = '' }: Props) {
       category: form.category,
       memo: form.memo.trim(),
       catalog_id: catalogData.id,
+      user_id: user?.id,
     })
 
     setSaving(false)

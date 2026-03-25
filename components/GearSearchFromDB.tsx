@@ -43,11 +43,13 @@ export default function GearSearchFromDB({ onSuccess, onManual }: Props) {
   }, [query])
 
   const handleAdd = async (item: CatalogItem) => {
+    const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('gears').insert({
       name: item.name,
       brand: item.brand,
       weight_g: item.weight_g,
       category: item.category,
+      user_id: user?.id,
     })
     if (!error) {
       setAdded((prev) => new Set(prev).add(item.id))

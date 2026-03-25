@@ -77,11 +77,13 @@ export default function GearForm({ onSuccess, initialName = '' }: Props) {
     }
 
     setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
     const { error: dbError } = await supabase.from('gears').insert({
       name: form.name.trim(),
       brand: form.brand.trim(),
       weight_g: Number(form.weight_g),
       category: form.category,
+      user_id: user?.id,
     })
     setSaving(false)
 

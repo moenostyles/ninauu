@@ -60,6 +60,7 @@ export default function TripForm({ packItems, onSuccess }: Props) {
 
     setSaving(true)
 
+    const { data: { user } } = await supabase.auth.getUser()
     const { data: tripData, error: tripError } = await supabase
       .from('trips')
       .insert({
@@ -69,6 +70,7 @@ export default function TripForm({ packItems, onSuccess }: Props) {
         total_weight_g: effectiveWeight,
         memo: form.memo.trim(),
         rating: form.rating,
+        user_id: user?.id,
       })
       .select('id')
       .single()

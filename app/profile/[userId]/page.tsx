@@ -112,6 +112,8 @@ export default function ProfilePage() {
   const [isFollowing, setIsFollowing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [followLoading, setFollowLoading] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Edit profile state
   const [editingProfile, setEditingProfile] = useState(false)
@@ -466,6 +468,54 @@ export default function ProfilePage() {
       {trips.length === 0 && packs.length === 0 && (
         <div className="text-center py-12">
           <p className="text-ink-3 text-sm">No public content yet.</p>
+        </div>
+      )}
+
+      {/* ── 退会 (自分のプロフィールのみ) ── */}
+      {isOwn && (
+        <div className="mt-12 pt-8 border-t border-line">
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-xs text-ink-3 hover:text-red-500 transition-colors"
+            >
+              退会する
+            </button>
+          ) : (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-5 space-y-3">
+              <p className="text-sm font-semibold text-red-600">本当に退会しますか？</p>
+              <p className="text-xs text-red-400">アカウントとすべてのデータが完全に削除されます。この操作は取り消せません。</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    setDeleting(true)
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const res = await fetch('/api/delete-account', {
+                      method: 'DELETE',
+                      headers: { Authorization: `Bearer ${session?.access_token}` },
+                    })
+                    if (res.ok) {
+                      await supabase.auth.signOut()
+                      router.push('/')
+                    } else {
+                      alert('退会処理に失敗しました。')
+                      setDeleting(false)
+                    }
+                  }}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-500 text-white text-xs font-medium rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50"
+                >
+                  {deleting ? '処理中...' : '退会する'}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 bg-surface border border-line text-xs font-medium rounded-xl hover:bg-fill transition-colors"
+                >
+                  キャンセル
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -47,6 +47,7 @@ export default function WishListSearchFromDB({ onSuccess, onManual }: Props) {
   const handleAdd = async (item: CatalogItem) => {
     setAdding(item.id)
     setError('')
+    const { data: { user } } = await supabase.auth.getUser()
     const { error: insertError } = await supabase.from('wishlist').insert({
       name: item.name,
       brand: item.brand,
@@ -54,6 +55,7 @@ export default function WishListSearchFromDB({ onSuccess, onManual }: Props) {
       category: item.category,
       memo: '',
       catalog_id: item.id,
+      user_id: user?.id,
     })
     setAdding(null)
     if (insertError) {

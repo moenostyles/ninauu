@@ -41,3 +41,12 @@ body {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
+
+/* Scrollbar hide */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

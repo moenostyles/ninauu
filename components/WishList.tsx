@@ -17,11 +17,13 @@ export default function WishList({ items, onRefresh }: Props) {
 
   const handlePromote = async (item: WishItem) => {
     // Add to gears
+    const { data: { user } } = await supabase.auth.getUser()
     const { error: gearError } = await supabase.from('gears').insert({
       name: item.name,
       brand: item.brand,
       weight_g: item.weight_g,
       category: item.category,
+      user_id: user?.id,
     })
     if (gearError) return
 
