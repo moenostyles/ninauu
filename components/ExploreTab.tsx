@@ -26,16 +26,16 @@ interface ExploreItem {
   display_name: string | null
   avatar_url: string | null
   type: 'pack' | 'trip'
-  // pack-specific
   item_count?: number
   total_weight?: number
-  // trip-specific
   destination?: string
   start_date?: string
   end_date?: string
   total_weight_g?: number
   rating?: number
 }
+
+const PAGE_SIZE = 20
 
 function fmtWeight(g: number) {
   return g >= 1000 ? `${(g / 1000).toFixed(2)}kg` : `${g}g`
@@ -68,46 +68,55 @@ export default function ExploreTab({ currentUserId }: Props) {
   const [packs, setPacks] = useState<ExploreItem[]>([])
   const [trips, setTrips] = useState<ExploreItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [page, setPage] = useState(0)
   const [filter, setFilter] = useState<'all' | 'following'>('all')
   const [expandedPackId, setExpandedPackId] = useState<string | null>(null)
   const [packItems, setPackItems] = useState<Record<string, { gear_name: string; brand: string; weight_g: number; category: string; quantity: number }[]>>({})
 
-  // User search
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<UserResult[]>([])
   const [searching, setSearching] = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    loadExplore()
+    setPage(0)
+    setPacks([])
+    setTrips([])
+    loadExplore(0, true)
   }, [filter])
 
-  const loadExplore = async () => {
-    setLoading(true)
+  const loadExplore = async (pageNum: number, reset: boolean) => {
+    if (pageNum === 0) setLoading(true)
+    else setLoadingMore(true)
 
-    // Load following IDs if filter === 'following'
     let followingIds: string[] = []
     if (filter === 'following') {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('follows')
         .select('following_id')
         .eq('follower_id', currentUserId)
+      if (error) console.error('[ExploreTab] error:', error)
       followingIds = (data ?? []).map((r: { following_id: string }) => r.following_id)
       if (followingIds.length === 0) {
         setPacks([])
         setTrips([])
+        setHasMore(false)
         setLoading(false)
+        setLoadingMore(false)
         return
       }
     }
 
-    // Fetch public/followers packs (excluding own)
+    const offset = pageNum * PAGE_SIZE
+
     let packsQuery = supabase
       .from('saved_packs')
       .select('id, name, user_id, visibility, created_at')
       .neq('user_id', currentUserId)
       .order('created_at', { ascending: false })
-      .limit(50)
+      .range(offset, offset + PAGE_SIZE - 1)
 
     if (filter === 'following') {
       packsQuery = packsQuery.in('user_id', followingIds)
@@ -115,15 +124,15 @@ export default function ExploreTab({ currentUserId }: Props) {
       packsQuery = packsQuery.eq('visibility', 'public')
     }
 
-    const { data: packsData } = await packsQuery
+    const { data: packsData, error: packsError } = await packsQuery
+    if (packsError) console.error('[ExploreTab] error:', packsError)
 
-    // Fetch public/followers trips (excluding own)
     let tripsQuery = supabase
       .from('trips')
       .select('id, destination, start_date, end_date, total_weight_g, rating, user_id, visibility, created_at')
       .neq('user_id', currentUserId)
       .order('created_at', { ascending: false })
-      .limit(50)
+      .range(offset, offset + PAGE_SIZE - 1)
 
     if (filter === 'following') {
       tripsQuery = tripsQuery.in('user_id', followingIds)
@@ -131,9 +140,12 @@ export default function ExploreTab({ currentUserId }: Props) {
       tripsQuery = tripsQuery.eq('visibility', 'public')
     }
 
-    const { data: tripsData } = await tripsQuery
+    const { data: tripsData, error: tripsError } = await tripsQuery
+    if (tripsError) console.error('[ExploreTab] error:', tripsError)
 
-    // Fetch profiles for all user_ids
+    const fetchedCount = Math.max((packsData ?? []).length, (tripsData ?? []).length)
+    setHasMore(fetchedCount >= PAGE_SIZE)
+
     const allUserIds = [
       ...new Set([
         ...(packsData ?? []).map((p: { user_id: string }) => p.user_id),
@@ -143,23 +155,24 @@ export default function ExploreTab({ currentUserId }: Props) {
 
     const profileMap: Record<string, { display_name: string | null; avatar_url: string | null }> = {}
     if (allUserIds.length > 0) {
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, display_name, avatar_url')
         .in('id', allUserIds)
+      if (profilesError) console.error('[ExploreTab] error:', profilesError)
       for (const p of profiles ?? []) {
         profileMap[p.id] = { display_name: p.display_name, avatar_url: p.avatar_url }
       }
     }
 
-    // Fetch pack item counts
     const packIds = (packsData ?? []).map((p: { id: string }) => p.id)
     const countMap: Record<string, { count: number; weight: number }> = {}
     if (packIds.length > 0) {
-      const { data: itemsData } = await supabase
+      const { data: itemsData, error: itemsError } = await supabase
         .from('saved_pack_items')
         .select('pack_id, weight_g, quantity')
         .in('pack_id', packIds)
+      if (itemsError) console.error('[ExploreTab] error:', itemsError)
       for (const item of itemsData ?? []) {
         if (!countMap[item.pack_id]) countMap[item.pack_id] = { count: 0, weight: 0 }
         countMap[item.pack_id].count += item.quantity
@@ -184,9 +197,22 @@ export default function ExploreTab({ currentUserId }: Props) {
       avatar_url: profileMap[t.user_id]?.avatar_url ?? null,
     }))
 
-    setPacks(enrichedPacks)
-    setTrips(enrichedTrips)
+    if (reset) {
+      setPacks(enrichedPacks)
+      setTrips(enrichedTrips)
+    } else {
+      setPacks((prev) => [...prev, ...enrichedPacks])
+      setTrips((prev) => [...prev, ...enrichedTrips])
+    }
+
     setLoading(false)
+    setLoadingMore(false)
+  }
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1
+    setPage(nextPage)
+    loadExplore(nextPage, false)
   }
 
   const handleSearchChange = (q: string) => {
@@ -195,25 +221,44 @@ export default function ExploreTab({ currentUserId }: Props) {
     if (!q.trim()) { setSearchResults([]); return }
     setSearching(true)
     searchTimeout.current = setTimeout(async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('id, display_name, username, avatar_url')
         .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
         .neq('id', currentUserId)
         .limit(10)
+      if (error) console.error('[ExploreTab] error:', error)
 
       if (data && data.length > 0) {
         const ids = data.map((p: { id: string }) => p.id)
-        const { data: followData } = await supabase
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', currentUserId)
-          .in('following_id', ids)
-        const followingSet = new Set((followData ?? []).map((f: { following_id: string }) => f.following_id))
-        setSearchResults(data.map((p: { id: string; display_name: string | null; username: string | null; avatar_url: string | null }) => ({
-          ...p,
-          is_following: followingSet.has(p.id),
-        })))
+
+        const [followRes, blockRes] = await Promise.all([
+          supabase
+            .from('follows')
+            .select('following_id')
+            .eq('follower_id', currentUserId)
+            .in('following_id', ids),
+          supabase
+            .from('blocks')
+            .select('blocked_id')
+            .eq('blocker_id', currentUserId)
+            .in('blocked_id', ids),
+        ])
+
+        if (followRes.error) console.error('[ExploreTab] error:', followRes.error)
+        if (blockRes.error) console.error('[ExploreTab] error:', blockRes.error)
+
+        const followingSet = new Set((followRes.data ?? []).map((f: { following_id: string }) => f.following_id))
+        const blockedSet = new Set((blockRes.data ?? []).map((b: { blocked_id: string }) => b.blocked_id))
+
+        setSearchResults(
+          data
+            .filter((p: { id: string }) => !blockedSet.has(p.id))
+            .map((p: { id: string; display_name: string | null; username: string | null; avatar_url: string | null }) => ({
+              ...p,
+              is_following: followingSet.has(p.id),
+            }))
+        )
       } else {
         setSearchResults([])
       }
@@ -223,9 +268,11 @@ export default function ExploreTab({ currentUserId }: Props) {
 
   const handleToggleFollow = async (targetId: string, isFollowing: boolean) => {
     if (isFollowing) {
-      await supabase.from('follows').delete().eq('follower_id', currentUserId).eq('following_id', targetId)
+      const { error } = await supabase.from('follows').delete().eq('follower_id', currentUserId).eq('following_id', targetId)
+      if (error) console.error('[ExploreTab] error:', error)
     } else {
-      await supabase.from('follows').insert({ follower_id: currentUserId, following_id: targetId })
+      const { error } = await supabase.from('follows').insert({ follower_id: currentUserId, following_id: targetId })
+      if (error) console.error('[ExploreTab] error:', error)
     }
     setSearchResults((prev) =>
       prev.map((u) => u.id === targetId ? { ...u, is_following: !isFollowing } : u)
@@ -234,10 +281,11 @@ export default function ExploreTab({ currentUserId }: Props) {
 
   const loadPackItems = async (packId: string) => {
     if (packItems[packId]) return
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('saved_pack_items')
       .select('gear_name, brand, weight_g, category, quantity')
       .eq('pack_id', packId)
+    if (error) console.error('[ExploreTab] error:', error)
     if (data) setPackItems((prev) => ({ ...prev, [packId]: data }))
   }
 
@@ -260,7 +308,6 @@ export default function ExploreTab({ currentUserId }: Props) {
 
   return (
     <div>
-      {/* User search */}
       <div className="relative mb-4">
         <Search size={14} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none" />
         <input
@@ -272,7 +319,6 @@ export default function ExploreTab({ currentUserId }: Props) {
         />
       </div>
 
-      {/* Search results */}
       {searchQuery.trim() && (
         <div className="mb-4 space-y-1">
           {searching ? (
@@ -313,7 +359,6 @@ export default function ExploreTab({ currentUserId }: Props) {
         </div>
       )}
 
-      {/* Filter tabs */}
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setFilter('all')}
@@ -334,92 +379,116 @@ export default function ExploreTab({ currentUserId }: Props) {
       </div>
 
       {allItems.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-ink-3 text-sm">
-            {filter === 'following' ? 'No posts from people you follow.' : 'No public content yet.'}
-          </p>
+        <div className="text-center py-20 px-6">
+          {filter === 'following' ? (
+            <>
+              <p className="text-3xl mb-3">👣</p>
+              <p className="text-sm font-medium text-ink">フォロー中のユーザーの投稿はまだありません</p>
+              <p className="text-xs text-ink-3 mt-1">他のハイカーをフォローして、パッキングリストを参考にしましょう</p>
+            </>
+          ) : (
+            <>
+              <p className="text-3xl mb-3">🏕️</p>
+              <p className="text-sm font-medium text-ink">他のハイカーのパッキングリストを閲覧できます</p>
+              <p className="text-xs text-ink-3 mt-1">公開されたパックやトリップがここに表示されます</p>
+            </>
+          )}
         </div>
       ) : (
-        <div className="space-y-2">
-          {allItems.map((item) => (
-            <div key={`${item.type}-${item.id}`} className="bg-white border border-line rounded-xl shadow-sm overflow-hidden">
-              {item.type === 'pack' ? (
-                <div>
-                  <div
-                    className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-fill transition-colors"
-                    onClick={() => handleExpandPack(item.id)}
-                  >
+        <>
+          <div className="space-y-2">
+            {allItems.map((item) => (
+              <div key={`${item.type}-${item.id}`} className="bg-white border border-line rounded-xl shadow-sm overflow-hidden">
+                {item.type === 'pack' ? (
+                  <div>
+                    <div
+                      className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-fill transition-colors"
+                      onClick={() => handleExpandPack(item.id)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-fill-2 text-ink-3 font-medium">Pack</span>
+                          <span className="font-semibold text-sm text-ink truncate">{item.name}</span>
+                        </div>
+                        <div className="flex gap-3 mt-0.5 text-xs text-ink-3">
+                          {(item.item_count ?? 0) > 0 && <span>{item.item_count} items</span>}
+                          {(item.total_weight ?? 0) > 0 && <span className="font-medium text-ink-2">{fmtWeight(item.total_weight ?? 0)}</span>}
+                        </div>
+                      </div>
+                      <Link
+                        href={`/profile/${item.user_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 shrink-0 hover:opacity-70 transition-opacity"
+                      >
+                        <Avatar displayName={item.display_name} avatarUrl={item.avatar_url} size={6} />
+                        <span className="text-xs text-ink-3 hidden sm:block">{item.display_name ?? 'Anonymous'}</span>
+                      </Link>
+                      <ChevronDown
+                        size={14}
+                        strokeWidth={2}
+                        className={`text-ink-3 transition-transform duration-200 ${expandedPackId === item.id ? 'rotate-180' : ''}`}
+                      />
+                    </div>
+                    {expandedPackId === item.id && packItems[item.id] && (
+                      <div className="border-t border-line px-4 py-3 bg-fill space-y-1.5">
+                        {packItems[item.id].map((gi, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-fill-2 text-ink-3 shrink-0">{gi.category}</span>
+                            <span className="text-xs text-ink-2 flex-1 truncate">
+                              {gi.gear_name}
+                              {gi.brand && <span className="text-ink-3"> · {gi.brand}</span>}
+                              {gi.quantity > 1 && <span className="text-ink-3"> ×{gi.quantity}</span>}
+                            </span>
+                            <span className="text-xs text-ink-3 shrink-0">{gi.weight_g * gi.quantity}g</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-fill-2 text-ink-3 font-medium">Pack</span>
-                        <span className="font-semibold text-sm text-ink truncate">{item.name}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-fill-2 text-ink-3 font-medium">Trip</span>
+                        <span className="font-semibold text-sm text-ink truncate">{item.destination}</span>
+                        {(item.rating ?? 0) > 0 && (
+                          <span className="text-xs text-ink">{'★'.repeat(item.rating ?? 0)}</span>
+                        )}
                       </div>
                       <div className="flex gap-3 mt-0.5 text-xs text-ink-3">
-                        {(item.item_count ?? 0) > 0 && <span>{item.item_count} items</span>}
-                        {(item.total_weight ?? 0) > 0 && <span className="font-medium text-ink-2">{fmtWeight(item.total_weight ?? 0)}</span>}
+                        {item.start_date && item.end_date && (
+                          <span>{formatDateRange(item.start_date, item.end_date)}</span>
+                        )}
+                        {(item.total_weight_g ?? 0) > 0 && (
+                          <span className="font-medium text-ink-2">{fmtWeight(item.total_weight_g ?? 0)}</span>
+                        )}
                       </div>
                     </div>
                     <Link
                       href={`/profile/${item.user_id}`}
-                      onClick={(e) => e.stopPropagation()}
                       className="flex items-center gap-1.5 shrink-0 hover:opacity-70 transition-opacity"
                     >
                       <Avatar displayName={item.display_name} avatarUrl={item.avatar_url} size={6} />
                       <span className="text-xs text-ink-3 hidden sm:block">{item.display_name ?? 'Anonymous'}</span>
                     </Link>
-                    <ChevronDown
-                      size={14}
-                      strokeWidth={2}
-                      className={`text-ink-3 transition-transform duration-200 ${expandedPackId === item.id ? 'rotate-180' : ''}`}
-                    />
                   </div>
-                  {expandedPackId === item.id && packItems[item.id] && (
-                    <div className="border-t border-line px-4 py-3 bg-fill space-y-1.5">
-                      {packItems[item.id].map((gi, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-fill-2 text-ink-3 shrink-0">{gi.category}</span>
-                          <span className="text-xs text-ink-2 flex-1 truncate">
-                            {gi.gear_name}
-                            {gi.brand && <span className="text-ink-3"> · {gi.brand}</span>}
-                            {gi.quantity > 1 && <span className="text-ink-3"> ×{gi.quantity}</span>}
-                          </span>
-                          <span className="text-xs text-ink-3 shrink-0">{gi.weight_g * gi.quantity}g</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="px-4 py-3 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-fill-2 text-ink-3 font-medium">Trip</span>
-                      <span className="font-semibold text-sm text-ink truncate">{item.destination}</span>
-                      {(item.rating ?? 0) > 0 && (
-                        <span className="text-xs text-ink">{'★'.repeat(item.rating ?? 0)}</span>
-                      )}
-                    </div>
-                    <div className="flex gap-3 mt-0.5 text-xs text-ink-3">
-                      {item.start_date && item.end_date && (
-                        <span>{formatDateRange(item.start_date, item.end_date)}</span>
-                      )}
-                      {(item.total_weight_g ?? 0) > 0 && (
-                        <span className="font-medium text-ink-2">{fmtWeight(item.total_weight_g ?? 0)}</span>
-                      )}
-                    </div>
-                  </div>
-                  <Link
-                    href={`/profile/${item.user_id}`}
-                    className="flex items-center gap-1.5 shrink-0 hover:opacity-70 transition-opacity"
-                  >
-                    <Avatar displayName={item.display_name} avatarUrl={item.avatar_url} size={6} />
-                    <span className="text-xs text-ink-3 hidden sm:block">{item.display_name ?? 'Anonymous'}</span>
-                  </Link>
-                </div>
-              )}
+                )}
+              </div>
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="px-4 py-2 text-sm text-ink-3 border border-line rounded-xl hover:bg-fill transition-colors disabled:opacity-40"
+              >
+                {loadingMore ? 'Loading…' : 'Load more'}
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   )

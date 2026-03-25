@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown, Globe, Lock, Users, X } from 'lucide-react'
 import { PackEntry, SavedPack, Visibility } from '@/types'
+import { useWeightUnit } from '@/lib/weight-unit-context'
 
 interface Props {
   items: PackEntry[]
@@ -15,7 +16,7 @@ interface Props {
   onToggleVisibility: (packId: string, visibility: Visibility) => void
 }
 
-function fmtWeight(g: number) {
+function fmtWeightG(g: number) {
   return g >= 1000 ? `${(g / 1000).toFixed(2)}kg` : `${g}g`
 }
 
@@ -32,6 +33,7 @@ function VisibilityLabel({ v }: { v: Visibility }) {
 }
 
 export default function PackSummary({ items, savedPacks, onRemove, onClearAll, onSave, onLoad, onDeleteSaved, onToggleVisibility }: Props) {
+  const { fmt: fmtWeight } = useWeightUnit()
   const [showSaveInput, setShowSaveInput] = useState(false)
   const [saveName, setSaveName] = useState('')
   const [saveVisibility, setSaveVisibility] = useState<Visibility>('private')
@@ -73,7 +75,7 @@ export default function PackSummary({ items, savedPacks, onRemove, onClearAll, o
           <p className="text-3xl font-bold mt-0.5 nums leading-none">{fmtWeight(totalWeight)}</p>
           <p className="text-[10px] text-ink-3 mt-1">
             {items.reduce((s, e) => s + e.quantity, 0)} items
-            {totalWeight >= 1000 && <span className="ml-1.5 nums">{totalWeight}g</span>}
+            {totalWeight >= 1000 && <span className="ml-1.5 nums">{fmtWeightG(totalWeight)}</span>}
           </p>
         </div>
 

@@ -5,6 +5,7 @@ import { X, Pencil } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Gear, PackEntry } from '@/types'
 import EditGearModal from '@/components/EditGearModal'
+import { useWeightUnit } from '@/lib/weight-unit-context'
 
 interface Props {
   gears: Gear[]
@@ -17,6 +18,7 @@ interface Props {
 
 export default function GearList({ gears, packItems, onTogglePack, onUpdateQuantity, onDelete }: Props) {
   const [editingGear, setEditingGear] = useState<Gear | null>(null)
+  const { fmt } = useWeightUnit()
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this gear?')) return
@@ -94,26 +96,26 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             {/* Weight */}
             <div className="text-right shrink-0 w-14">
               <span className="text-sm font-semibold text-ink nums">
-                {inPack && entry.quantity > 1 ? `${gear.weight_g * entry.quantity}g` : `${gear.weight_g}g`}
+                {inPack && entry.quantity > 1 ? fmt(gear.weight_g * entry.quantity) : fmt(gear.weight_g)}
               </span>
               {inPack && entry.quantity > 1 && (
-                <p className="text-[10px] text-ink-3 nums">{gear.weight_g}g × {entry.quantity}</p>
+                <p className="text-[10px] text-ink-3 nums">{fmt(gear.weight_g)} × {entry.quantity}</p>
               )}
             </div>
 
             {/* Edit & Delete */}
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center shrink-0">
               <button
                 onClick={() => setEditingGear(gear)}
-                className="p-1 text-[#D1D5DB] hover:text-ink transition-colors"
-                title="Edit"
+                className="w-11 h-11 flex items-center justify-center text-[#D1D5DB] hover:text-ink transition-colors"
+                aria-label="Edit gear"
               >
                 <Pencil size={13} strokeWidth={2} />
               </button>
               <button
                 onClick={() => handleDelete(gear.id)}
-                className="p-1 text-[#D1D5DB] hover:text-red-400 transition-colors"
-                title="Delete"
+                className="w-11 h-11 flex items-center justify-center text-[#D1D5DB] hover:text-red-400 transition-colors"
+                aria-label="Delete gear"
               >
                 <X size={14} strokeWidth={2} />
               </button>

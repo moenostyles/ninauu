@@ -177,20 +177,23 @@ export default function Home() {
           <div className="flex flex-col gap-2 mb-4">
             <div className="flex items-center gap-3">
               {/* Parent chips — horizontal scroll */}
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide flex-1 pb-0.5">
-                {['All', ...PARENT_CATEGORIES].map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => { setFilterParent(p); setFilterChild('All') }}
-                    className={`px-3 py-1 text-xs rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
-                      filterParent === p
-                        ? 'bg-ink text-surface border-ink shadow-sm'
-                        : 'bg-surface text-ink border-line hover:border-ink hover:bg-fill'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
+              <div className="relative flex-1 overflow-hidden">
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+                  {['All', ...PARENT_CATEGORIES].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => { setFilterParent(p); setFilterChild('All') }}
+                      className={`px-3 py-1 text-xs rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
+                        filterParent === p
+                          ? 'bg-ink text-surface border-ink shadow-sm'
+                          : 'bg-surface text-ink border-line hover:border-ink hover:bg-fill'
+                      }`}
+                    >
+                      {p === 'Apparel Accessories' ? 'Apparel Acc.' : p}
+                    </button>
+                  ))}
+                </div>
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-fill to-transparent" />
               </div>
               <button
                 onClick={() => { setAddMode((p) => (p ? null : 'search')); setGearInitialName('') }}

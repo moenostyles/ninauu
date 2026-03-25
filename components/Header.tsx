@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import NotificationBell from '@/components/NotificationBell'
+import { useWeightUnit } from '@/lib/weight-unit-context'
 
 export default function Header() {
   const { user } = useAuth()
+  const { unit, toggle } = useWeightUnit()
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [initials, setInitials] = useState('?')
 
@@ -67,6 +69,14 @@ export default function Header() {
 
         {user && (
           <div className="flex items-center gap-3">
+            <button
+              onClick={toggle}
+              aria-label={`Switch to ${unit === 'g' ? 'oz' : 'g'}`}
+              className="flex items-center text-[11px] font-medium rounded-full border border-ink-2 overflow-hidden"
+            >
+              <span className={`px-2 py-0.5 transition-colors ${unit === 'g' ? 'bg-surface text-ink' : 'text-ink-3'}`}>g</span>
+              <span className={`px-2 py-0.5 transition-colors ${unit === 'oz' ? 'bg-surface text-ink' : 'text-ink-3'}`}>oz</span>
+            </button>
             <NotificationBell userId={user.id} />
             <Link href={`/profile/${user.id}`} className="w-8 h-8 rounded-full overflow-hidden bg-ink-2 flex items-center justify-center shrink-0 hover:opacity-75 transition-opacity">
               {avatarUrl ? (

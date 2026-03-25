@@ -18,10 +18,12 @@ interface FollowUser {
 function FollowListModal({
   title,
   userIds,
+  mutualIds,
   onClose,
 }: {
   title: string
   userIds: string[]
+  mutualIds: Set<string>
   onClose: () => void
 }) {
   const [users, setUsers] = useState<FollowUser[]>([])
@@ -62,10 +64,13 @@ function FollowListModal({
                     </span>
                   )}
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ink">{u.display_name ?? u.username ?? 'Anonymous'}</p>
                   {u.username && <p className="text-xs text-ink-3">@{u.username}</p>}
                 </div>
+                {mutualIds.has(u.id) && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-fill-2 text-ink-3 shrink-0">Mutual</span>
+                )}
               </Link>
             ))
           )}
@@ -115,17 +120,19 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  // Edit profile state
+  const [isBlocked, setIsBlocked] = useState(false)
+  const [blockLoading, setBlockLoading] = useState(false)
+
+  const [myFollowingIds, setMyFollowingIds] = useState<Set<string>>(new Set())
+
   const [editingProfile, setEditingProfile] = useState(false)
   const [editDisplayName, setEditDisplayName] = useState('')
   const [editUsername, setEditUsername] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
 
-  // Avatar upload
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
-  // Expanded trip/pack state
   const [expandedTripId, setExpandedTripId] = useState<string | null>(null)
   const [tripItemsCache, setTripItemsCache] = useState<Record<string, TripItem[]>>({})
   const [expandedPackId, setExpandedPackId] = useState<string | null>(null)
@@ -152,13 +159,27 @@ export default function ProfilePage() {
     setFollowingCount(fwgIds.length)
 
     if (user && !isOwn) {
-      const { data } = await supabase
-        .from('follows')
-        .select('follower_id')
-        .eq('follower_id', user.id)
-        .eq('following_id', userId)
-        .maybeSingle()
-      setIsFollowing(!!data)
+      const [followCheck, blockCheck, myFollowingRes] = await Promise.all([
+        supabase
+          .from('follows')
+          .select('follower_id')
+          .eq('follower_id', user.id)
+          .eq('following_id', userId)
+          .maybeSingle(),
+        supabase
+          .from('blocks')
+          .select('id')
+          .eq('blocker_id', user.id)
+          .eq('blocked_id', userId)
+          .maybeSingle(),
+        supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id),
+      ])
+      setIsFollowing(!!followCheck.data)
+      setIsBlocked(!!blockCheck.data)
+      setMyFollowingIds(new Set((myFollowingRes.data ?? []).map((r: { following_id: string }) => r.following_id)))
     }
 
     setLoading(false)
@@ -179,6 +200,19 @@ export default function ProfilePage() {
       setFollowerCount((c) => c + 1)
     }
     setFollowLoading(false)
+  }
+
+  const handleBlock = async () => {
+    if (!user) return
+    setBlockLoading(true)
+    if (isBlocked) {
+      await supabase.from('blocks').delete().eq('blocker_id', user.id).eq('blocked_id', userId)
+      setIsBlocked(false)
+    } else {
+      await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: userId })
+      setIsBlocked(true)
+    }
+    setBlockLoading(false)
   }
 
   const handleSaveProfile = async () => {
@@ -209,7 +243,6 @@ export default function ProfilePage() {
       alert('Upload failed: ' + uploadError.message)
     } else {
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
-      // Cache-busting URL
       const avatarUrl = urlData.publicUrl + '?t=' + Date.now()
       const { error: updateError } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id)
       if (updateError) {
@@ -245,9 +278,11 @@ export default function ProfilePage() {
 
   const initial = profile.display_name?.charAt(0)?.toUpperCase() ?? profile.username?.charAt(0)?.toUpperCase() ?? '?'
 
+  const followerMutualIds = new Set(followerIds.filter((id) => myFollowingIds.has(id)))
+  const followingMutualIds = new Set(followingIds.filter((id) => followerIds.includes(id)))
+
   return (
     <div className="max-w-2xl mx-auto px-5 py-6 space-y-6">
-      {/* Back button */}
       <button
         onClick={() => router.push('/')}
         className="flex items-center gap-1.5 text-sm text-ink-3 hover:text-ink transition-colors"
@@ -255,11 +290,9 @@ export default function ProfilePage() {
         <ArrowLeft size={16} strokeWidth={2} /> Back
       </button>
 
-      {/* Profile header */}
       <div className="bg-white border border-line rounded-2xl px-5 py-5">
         <div className="flex items-start gap-4">
 
-          {/* Avatar */}
           <div className="relative shrink-0">
             <div className="w-14 h-14 rounded-full overflow-hidden bg-fill-2 flex items-center justify-center">
               {profile.avatar_url ? (
@@ -293,7 +326,6 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Name / edit */}
           <div className="flex-1 min-w-0">
             {editingProfile ? (
               <div className="space-y-2">
@@ -358,22 +390,30 @@ export default function ProfilePage() {
           </div>
 
           {!isOwn && user && !editingProfile && (
-            <button
-              onClick={handleFollow}
-              disabled={followLoading}
-              className={`shrink-0 px-4 py-2 text-sm font-medium rounded-xl transition-colors disabled:opacity-40 ${
-                isFollowing
-                  ? 'border border-line text-ink-3 hover:bg-fill'
-                  : 'bg-ink text-surface hover:bg-ink-2'
-              }`}
-            >
-              {isFollowing ? 'Following' : 'Follow'}
-            </button>
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <button
+                onClick={handleFollow}
+                disabled={followLoading}
+                className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors disabled:opacity-40 ${
+                  isFollowing
+                    ? 'border border-line text-ink-3 hover:bg-fill'
+                    : 'bg-ink text-surface hover:bg-ink-2'
+                }`}
+              >
+                {isFollowing ? 'Following' : 'Follow'}
+              </button>
+              <button
+                onClick={handleBlock}
+                disabled={blockLoading}
+                className="text-xs text-red-400 hover:text-red-500 transition-colors disabled:opacity-40"
+              >
+                {isBlocked ? 'Unblock' : 'Block'}
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Trips */}
       {trips.length > 0 && (
         <div>
           <h2 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-2">Trips</h2>
@@ -426,7 +466,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Packs */}
       {packs.length > 0 && (
         <div>
           <h2 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-2">Saved Packs</h2>
@@ -471,7 +510,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Delete account (own profile only) */}
       {isOwn && (
         <div className="mt-12 pt-8 border-t border-line">
           {!showDeleteConfirm ? (
@@ -523,6 +561,7 @@ export default function ProfilePage() {
         <FollowListModal
           title={`Followers · ${followerCount}`}
           userIds={followerIds}
+          mutualIds={followerMutualIds}
           onClose={() => setShowFollowers(false)}
         />
       )}
@@ -530,6 +569,7 @@ export default function ProfilePage() {
         <FollowListModal
           title={`Following · ${followingCount}`}
           userIds={followingIds}
+          mutualIds={followingMutualIds}
           onClose={() => setShowFollowing(false)}
         />
       )}
