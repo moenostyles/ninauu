@@ -92,7 +92,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             )}
 
             {/* Weight */}
-            <div className="text-right shrink-0">
+            <div className="text-right shrink-0 w-14">
               <span className="text-sm font-semibold text-ink nums">
                 {inPack && entry.quantity > 1 ? `${gear.weight_g * entry.quantity}g` : `${gear.weight_g}g`}
               </span>
