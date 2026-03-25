@@ -30,6 +30,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('gear')
   const [filterParent, setFilterParent] = useState<string>('All')
   const [filterChild, setFilterChild] = useState<string>('All')
+  const [sortBy, setSortBy] = useState<'date' | 'name' | 'weight_asc' | 'weight_desc'>('date')
   const [loading, setLoading] = useState(true)
   const [gearInitialName, setGearInitialName] = useState('')
 
@@ -111,11 +112,18 @@ export default function Home() {
     fetchSavedPacks()
   }
 
-  const filteredGears = gears.filter((g) => {
-    if (filterParent === 'All') return true
-    if (filterChild !== 'All') return g.category === filterChild
-    return parentOf(g.category) === filterParent
-  })
+  const filteredGears = gears
+    .filter((g) => {
+      if (filterParent === 'All') return true
+      if (filterChild !== 'All') return g.category === filterChild
+      return parentOf(g.category) === filterParent
+    })
+    .sort((a, b) => {
+      if (sortBy === 'name')         return a.name.localeCompare(b.name)
+      if (sortBy === 'weight_asc')   return a.weight_g - b.weight_g
+      if (sortBy === 'weight_desc')  return b.weight_g - a.weight_g
+      return 0
+    })
   const packGearCount = packItems.reduce((s, e) => s + e.quantity, 0)
 
   // ── Tab config ──
@@ -209,6 +217,29 @@ export default function Home() {
                 ))}
               </div>
             )}
+
+            {/* Sort */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-ink-3 uppercase tracking-wider shrink-0">Sort</span>
+              {([
+                { key: 'date',         label: 'Latest'      },
+                { key: 'name',         label: 'Name'        },
+                { key: 'weight_asc',   label: 'Light → Heavy' },
+                { key: 'weight_desc',  label: 'Heavy → Light' },
+              ] as const).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setSortBy(key)}
+                  className={`px-2.5 py-0.5 text-xs rounded-full border transition-colors whitespace-nowrap shrink-0 ${
+                    sortBy === key
+                      ? 'bg-ink text-surface border-ink'
+                      : 'bg-surface text-ink-3 border-line hover:border-ink hover:bg-fill'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {addMode === 'search' && (
