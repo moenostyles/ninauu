@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context'
 import { Gear, Trip, PackEntry, SavedPack, Visibility, CATEGORY_TREE, PARENT_CATEGORIES, parentOf } from '@/types'
 import GearForm from '@/components/GearForm'
 import GearList from '@/components/GearList'
-import PackList from '@/components/PackList'
+import PackSummary from '@/components/PackSummary'
 import GearSearchFromDB from '@/components/GearSearchFromDB'
 import TripForm from '@/components/TripForm'
 import TripList from '@/components/TripList'
@@ -17,7 +17,7 @@ import ExploreTab from '@/components/ExploreTab'
 import AuthScreen from '@/components/AuthScreen'
 
 type AddMode = null | 'search' | 'manual'
-type Tab = 'gear' | 'pack' | 'trips' | 'explore'
+type Tab = 'gear' | 'trips' | 'explore'
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth()
@@ -101,7 +101,7 @@ export default function Home() {
       })
     }
     setPackItems(entries)
-    setActiveTab('pack')
+    setActiveTab('gear')
   }
 
   const handleDeleteSavedPack = async (packId: string) => {
@@ -118,8 +118,7 @@ export default function Home() {
 
   // ── Tab config ──
   const tabs: { key: Tab; label: string; badge?: number }[] = [
-    { key: 'gear',    label: 'Gear'    },
-    { key: 'pack',    label: 'Pack',    badge: packGearCount || undefined },
+    { key: 'gear',    label: 'Gear',    badge: packGearCount || undefined },
     { key: 'trips',   label: 'Trips',   badge: trips.length || undefined },
     { key: 'explore', label: 'Explore' },
   ]
@@ -224,6 +223,16 @@ export default function Home() {
             </div>
           )}
 
+          <PackSummary
+            items={packItems}
+            savedPacks={savedPacks}
+            onRemove={togglePackItem}
+            onSave={handleSavePack}
+            onLoad={handleLoadPack}
+            onDeleteSaved={handleDeleteSavedPack}
+            onToggleVisibility={handleTogglePackVisibility}
+          />
+
           {loading ? (
             <p className="text-ink-3 text-sm py-12 text-center">Loading…</p>
           ) : (
@@ -248,20 +257,6 @@ export default function Home() {
             ? <X size={20} strokeWidth={2.5} />
             : <Plus size={22} strokeWidth={2.5} />}
         </button>
-      )}
-
-      {/* ── Pack List ── */}
-      {activeTab === 'pack' && (
-        <PackList
-          items={packItems}
-          savedPacks={savedPacks}
-          onRemove={togglePackItem}
-          onUpdateQuantity={updatePackQuantity}
-          onSave={handleSavePack}
-          onLoad={handleLoadPack}
-          onDeleteSaved={handleDeleteSavedPack}
-          onToggleVisibility={handleTogglePackVisibility}
-        />
       )}
 
       {/* ── Trips ── */}
