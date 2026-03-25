@@ -1,17 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, Loader } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { ScrapeResult } from '@/app/api/scrape-gear/route'
 
-interface CatalogItem {
-  id: string
-  name: string
+interface GearSeedItem {
   brand: string
+  name: string
+  category: string      // parent (e.g. "Tent & Tarp")
+  subcategory: string   // leaf  (e.g. "Tent")
   weight_g: number
-  category: string
-  price_krw: number
+  source: string
+  url: string
 }
 
 interface Props {
@@ -19,10 +20,37 @@ interface Props {
   onManual: (name: string) => void
 }
 
+// ── client-side fuzzy search ──────────────────────────────────────────
+function searchGear(query: string, items: GearSeedItem[]): GearSeedItem[] {
+  const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean)
+  if (tokens.length === 0) return []
+
+  const scored = items
+    .map((item) => {
+      const brandL = item.brand.toLowerCase()
+      const nameL  = item.name.toLowerCase()
+      const catL   = (item.subcategory || item.category).toLowerCase()
+
+      let score = 0
+      for (const t of tokens) {
+        if (brandL.includes(t)) score += 2
+        if (nameL.includes(t))  score += 2
+        if (catL.includes(t))   score += 1
+      }
+      return { item, score }
+    })
+    .filter(({ score }) => score > 0)
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10)
+    .map(({ item }) => item)
+}
+
 export default function GearSearchFromDB({ onSuccess, onManual }: Props) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<CatalogItem[]>([])
-  const [searching, setSearching] = useState(false)
+  const [results, setResults] = useState<GearSeedItem[]>([])
+  const [seedData, setSeedData] = useState<GearSeedItem[]>([])
   const [added, setAdded] = useState<Set<string>>(new Set())
 
   // URL scraping
@@ -32,34 +60,38 @@ export default function GearSearchFromDB({ onSuccess, onManual }: Props) {
   const [scrapeResult, setScrapeResult] = useState<ScrapeResult | null>(null)
   const [scrapeError, setScrapeError] = useState('')
 
-  // catalog検索
+  // ── load seed JSON once ──────────────────────────────────────────────
   useEffect(() => {
-    if (!query.trim()) { setResults([]); return }
-    const timer = setTimeout(async () => {
-      setSearching(true)
-      const { data } = await supabase
-        .from('gear_catalog')
-        .select('*')
-        .or(`name.ilike.%${query}%,brand.ilike.%${query}%`)
-        .order('name')
-        .limit(20)
-      if (data) setResults(data as CatalogItem[])
-      setSearching(false)
-    }, 200)
-    return () => clearTimeout(timer)
-  }, [query])
+    fetch('/gear-seed.json')
+      .then((r) => r.json())
+      .then((data: GearSeedItem[]) => setSeedData(data))
+      .catch(() => {/* silent: falls back to empty results */})
+  }, [])
 
-  const handleAdd = async (item: CatalogItem) => {
+  // ── client-side search ───────────────────────────────────────────────
+  useEffect(() => {
+    if (query.trim().length < 2) { setResults([]); return }
+    setResults(searchGear(query, seedData))
+  }, [query, seedData])
+
+  // ── add gear to user's list ──────────────────────────────────────────
+  const handleAdd = async (item: GearSeedItem) => {
+    const key = `${item.brand}|${item.name}`
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('gears').insert({
-      name: item.name, brand: item.brand,
-      weight_g: item.weight_g, category: item.category,
+      name: item.name,
+      brand: item.brand,
+      weight_g: item.weight_g,
+      category: item.subcategory || item.category,
       user_id: user?.id,
     })
-    if (!error) { setAdded(prev => new Set(prev).add(item.id)); onSuccess() }
+    if (!error) {
+      setAdded((prev) => new Set(prev).add(key))
+      onSuccess()
+    }
   }
 
-  // URLスクレイピング
+  // ── URL scraping ─────────────────────────────────────────────────────
   const handleScrape = async () => {
     if (!urlInput.trim()) return
     setScraping(true)
@@ -84,7 +116,6 @@ export default function GearSearchFromDB({ onSuccess, onManual }: Props) {
     }
   }
 
-  // スクレイピング結果から直接ギアを追加
   const handleAddScraped = async () => {
     if (!scrapeResult) return
     const { data: { user } } = await supabase.auth.getUser()
@@ -103,10 +134,12 @@ export default function GearSearchFromDB({ onSuccess, onManual }: Props) {
     }
   }
 
+  const hasQuery = query.trim().length >= 2
+
   return (
     <div className="bg-white border border-line rounded-xl p-5 shadow-sm">
 
-      {/* 通常検索 */}
+      {/* 検索フィールド */}
       <input
         type="text"
         placeholder="Search by gear name or brand..."
@@ -117,43 +150,55 @@ export default function GearSearchFromDB({ onSuccess, onManual }: Props) {
       />
 
       <div className="mt-3">
-        {searching && <p className="text-ink-3 text-xs">Searching...</p>}
 
-        {!searching && query.trim() && results.length === 0 && (
+        {/* 検索結果ドロップダウン */}
+        {hasQuery && results.length > 0 && (
+          <div className="space-y-1 max-h-72 overflow-y-auto pr-1 mb-3">
+            {results.map((item) => {
+              const key = `${item.brand}|${item.name}`
+              return (
+                <div
+                  key={key}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-fill hover:bg-fill-2 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-ink truncate">{item.name}</p>
+                    <p className="text-xs text-ink-3">
+                      {item.brand}
+                      {item.brand && ' · '}
+                      {item.weight_g}g
+                      {item.subcategory && ` · ${item.subcategory}`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleAdd(item)}
+                    disabled={added.has(key)}
+                    className={`shrink-0 px-3 py-1 text-xs rounded-lg font-medium transition-colors ${
+                      added.has(key)
+                        ? 'bg-fill text-ink-3 cursor-default'
+                        : 'bg-ink text-white hover:bg-ink-2'
+                    }`}
+                  >
+                    {added.has(key) ? 'Added' : 'Add'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* No results */}
+        {hasQuery && results.length === 0 && (
           <button
             onClick={() => onManual(query.trim())}
-            className="w-full py-2.5 border-2 border-dashed border-line rounded-lg text-xs text-ink-3 hover:border-ink hover:text-ink hover:bg-fill transition-colors"
+            className="w-full py-2.5 border-2 border-dashed border-line rounded-lg text-xs text-ink-3 hover:border-ink hover:text-ink hover:bg-fill transition-colors mb-3"
           >
             No results — add &quot;{query}&quot; manually →
           </button>
         )}
 
-        {results.length > 0 && (
-          <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-            {results.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-fill hover:bg-fill-2 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">{item.name}</p>
-                  <p className="text-xs text-ink-3">
-                    {item.brand}{item.brand && ' · '}{item.weight_g}g · {item.category}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleAdd(item)}
-                  disabled={added.has(item.id)}
-                  className={`shrink-0 px-3 py-1 text-xs rounded-lg font-medium transition-colors ${
-                    added.has(item.id) ? 'bg-fill text-ink-3 cursor-default' : 'bg-ink text-white hover:bg-ink-2'
-                  }`}
-                >
-                  {added.has(item.id) ? 'Added' : 'Add'}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* 下部アクション */}
-        <div className="mt-3 flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <button
             onClick={() => onManual(query.trim())}
             className="text-xs text-ink-3 hover:text-ink transition-colors"
@@ -192,17 +237,14 @@ export default function GearSearchFromDB({ onSuccess, onManual }: Props) {
               </button>
             </div>
 
-            {/* 対応ブランド表示 */}
             <p className="text-[10px] text-ink-3">
               Supported: Montbell · Gossamer Gear · Sea to Summit · (generic)
             </p>
 
-            {/* エラー */}
             {scrapeError && (
               <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{scrapeError}</p>
             )}
 
-            {/* スクレイピング結果プレビュー */}
             {scrapeResult && (
               <div className="border border-line rounded-xl p-3 bg-fill space-y-2">
                 <p className="text-[10px] text-ink-3 uppercase tracking-wider font-semibold">Fetched data</p>
