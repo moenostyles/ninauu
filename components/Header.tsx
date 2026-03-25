@@ -55,6 +55,8 @@ export default function Header() {
 
   const handleLogout = () => supabase.auth.signOut()
 
+  if (!user) return null
+
   return (
     <header className="bg-ink text-surface sticky top-0 z-50">
       <div className="max-w-2xl mx-auto px-5 py-2 flex items-center justify-between">
