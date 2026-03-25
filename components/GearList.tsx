@@ -72,16 +72,6 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
               </div>
             </div>
 
-            {/* Weight */}
-            <div className="text-right shrink-0">
-              <span className="text-sm font-semibold text-ink nums">
-                {inPack && entry.quantity > 1 ? `${gear.weight_g * entry.quantity}g` : `${gear.weight_g}g`}
-              </span>
-              {inPack && entry.quantity > 1 && (
-                <p className="text-[10px] text-ink-3 nums">{gear.weight_g}g × {entry.quantity}</p>
-              )}
-            </div>
-
             {/* Quantity stepper (in-pack only) */}
             {inPack && (
               <div className="flex items-center gap-1 shrink-0">
@@ -100,6 +90,16 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
                 </button>
               </div>
             )}
+
+            {/* Weight */}
+            <div className="text-right shrink-0">
+              <span className="text-sm font-semibold text-ink nums">
+                {inPack && entry.quantity > 1 ? `${gear.weight_g * entry.quantity}g` : `${gear.weight_g}g`}
+              </span>
+              {inPack && entry.quantity > 1 && (
+                <p className="text-[10px] text-ink-3 nums">{gear.weight_g}g × {entry.quantity}</p>
+              )}
+            </div>
 
             {/* Edit & Delete */}
             <div className="flex items-center gap-1 shrink-0">
