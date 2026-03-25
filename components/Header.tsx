@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -7,13 +8,52 @@ import NotificationBell from '@/components/NotificationBell'
 
 export default function Header() {
   const { user } = useAuth()
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [initials, setInitials] = useState('?')
+
+  useEffect(() => {
+    if (!user) return
+
+    // Fetch profile
+    const load = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('avatar_url, display_name')
+        .eq('id', user.id)
+        .single()
+
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url)
+      } else {
+        setAvatarUrl(user.user_metadata?.avatar_url ?? null)
+      }
+
+      const name = data?.display_name
+        ?? (user.user_metadata?.full_name as string | undefined)
+        ?? user.email
+      setInitials(name?.charAt(0)?.toUpperCase() ?? '?')
+    }
+
+    load()
+
+    // Realtime: プロフィール更新を検知してアバターを即反映
+    const channel = supabase
+      .channel('header-profile')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'profiles',
+        filter: `id=eq.${user.id}`,
+      }, (payload) => {
+        if (payload.new?.avatar_url) setAvatarUrl(payload.new.avatar_url)
+        if (payload.new?.display_name) setInitials(payload.new.display_name.charAt(0).toUpperCase())
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [user])
 
   const handleLogout = () => supabase.auth.signOut()
-
-  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined
-  const initials = (user?.user_metadata?.full_name as string | undefined)?.charAt(0)?.toUpperCase()
-    ?? user?.email?.charAt(0)?.toUpperCase()
-    ?? '?'
 
   return (
     <header className="bg-ink text-surface sticky top-0 z-50">
