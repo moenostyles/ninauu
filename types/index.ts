@@ -16,10 +16,11 @@ export const PARENT_CATEGORIES = Object.keys(CATEGORY_TREE) as string[]
 // Flat list of all leaf categories
 export const CATEGORIES = Object.values(CATEGORY_TREE).flat() as string[]
 
-// Derive parent from child category
+// Derive parent from child category（大文字小文字を区別しない）
 export function parentOf(category: string): string {
+  const normalized = category.toLowerCase()
   for (const [parent, children] of Object.entries(CATEGORY_TREE)) {
-    if (children.includes(category)) return parent
+    if (children.some(c => c.toLowerCase() === normalized)) return parent
   }
   return 'Others'
 }

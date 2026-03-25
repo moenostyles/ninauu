@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Pencil, ChevronDown } from 'lucide-react'
+import { X, Pencil, ChevronDown, BookPlus, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Gear, PackEntry, parentOf, PARENT_CATEGORIES } from '@/types'
 import EditGearModal from '@/components/EditGearModal'
 import { useWeightUnit } from '@/lib/weight-unit-context'
+
+type CatalogStatus = 'idle' | 'loading' | 'added' | 'exists'
 
 interface Props {
   gears: Gear[]
@@ -19,7 +21,37 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
   const [editingGear, setEditingGear] = useState<Gear | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [showHint, setShowHint] = useState(false)
+  const [catalogStatus, setCatalogStatus] = useState<Record<string, CatalogStatus>>({})
   const { fmt } = useWeightUnit()
+
+  const handleAddToCatalog = async (gear: Gear) => {
+    setCatalogStatus(prev => ({ ...prev, [gear.id]: 'loading' }))
+
+    // 同名・同ブランドが既に存在するか確認
+    const { data: existing } = await supabase
+      .from('gear_catalog')
+      .select('id')
+      .ilike('name', gear.name)
+      .ilike('brand', gear.brand || '')
+      .limit(1)
+
+    if (existing && existing.length > 0) {
+      setCatalogStatus(prev => ({ ...prev, [gear.id]: 'exists' }))
+      setTimeout(() => setCatalogStatus(prev => ({ ...prev, [gear.id]: 'idle' })), 2500)
+      return
+    }
+
+    await supabase.from('gear_catalog').insert({
+      name: gear.name,
+      brand: gear.brand || '',
+      weight_g: gear.weight_g,
+      category: gear.category,
+      is_verified: false,
+    })
+
+    setCatalogStatus(prev => ({ ...prev, [gear.id]: 'added' }))
+    setTimeout(() => setCatalogStatus(prev => ({ ...prev, [gear.id]: 'idle' })), 2500)
+  }
 
   useEffect(() => {
     const dismissed = localStorage.getItem('ninauu_pack_hint_dismissed')
@@ -119,7 +151,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
           )}
         </div>
 
-        {/* Edit & Delete */}
+        {/* Edit / Delete / Catalog */}
         <div className="flex items-center shrink-0">
           <button
             onClick={() => setEditingGear(gear)}
@@ -135,6 +167,32 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
           >
             <X size={14} strokeWidth={2} />
           </button>
+          {/* Add to catalog */}
+          {(() => {
+            const status = catalogStatus[gear.id] ?? 'idle'
+            return (
+              <button
+                onClick={() => handleAddToCatalog(gear)}
+                disabled={status === 'loading' || status === 'added' || status === 'exists'}
+                aria-label="Add to catalog"
+                title={
+                  status === 'added' ? 'Added to catalog!'
+                  : status === 'exists' ? 'Already in catalog'
+                  : 'Add to catalog'
+                }
+                className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
+                  status === 'added'  ? 'text-green-500' :
+                  status === 'exists' ? 'text-ink-3' :
+                  'text-[#D1D5DB] hover:text-ink'
+                }`}
+              >
+                {status === 'added'
+                  ? <Check size={13} strokeWidth={2.5} />
+                  : <BookPlus size={13} strokeWidth={2} />
+                }
+              </button>
+            )
+          })()}
         </div>
       </div>
     )
