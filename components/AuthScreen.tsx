@@ -34,26 +34,22 @@ export default function AuthScreen() {
     })
   }
 
-  const inputClass = 'w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ink bg-surface placeholder:text-ink-3'
-
   return (
-    <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-6">
-      {/* Wordmark */}
-      <div className="mb-8 text-center">
-        <p className="text-3xl font-bold tracking-tight" style={{ color: '#1C1C1E' }}>Ninauu</p>
-        <p className="mt-1 text-xs font-light uppercase tracking-widest" style={{ color: '#8E8E93' }}>Essentials, only.</p>
-      </div>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
+      <div className="w-full max-w-sm flex flex-col items-center">
 
-      {/* Card */}
-      <div className="w-full max-w-sm bg-white border border-line rounded-2xl shadow-sm p-7 space-y-5">
+        {/* Wordmark */}
+        <p className="text-3xl font-bold tracking-tight" style={{ color: '#1C1C1E' }}>Ninauu</p>
+        <p className="mt-2 text-[10px] font-light uppercase tracking-widest" style={{ color: '#8E8E93' }}>Essentials, only.</p>
+
         {/* Mode toggle */}
-        <div className="bg-fill rounded-xl p-1 flex">
+        <div className="w-full mt-12 bg-gray-100 rounded-xl p-1 flex">
           {(['signin', 'signup'] as const).map((m) => (
             <button
               key={m}
               onClick={() => { setMode(m); setError(''); setMessage('') }}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                mode === m ? 'bg-ink text-surface shadow-sm' : 'text-ink-3 hover:text-ink'
+              className={`flex-1 h-10 text-sm font-medium rounded-lg transition-all ${
+                mode === m ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
               {m === 'signin' ? 'Sign In' : 'Sign Up'}
@@ -61,14 +57,15 @@ export default function AuthScreen() {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="w-full mt-4 space-y-3">
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
             required
-            className={inputClass}
+            className="w-full h-14 border border-gray-200 rounded-xl px-4 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 placeholder:text-gray-400"
           />
           <input
             type="password"
@@ -76,31 +73,33 @@ export default function AuthScreen() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
             required
-            className={inputClass}
+            className="w-full h-14 border border-gray-200 rounded-xl px-4 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 placeholder:text-gray-400"
           />
 
-          {error && <p className="text-red-500 text-xs pt-0.5">{error}</p>}
-          {message && <p className="text-green-600 text-xs pt-0.5">{message}</p>}
+          {error && <p className="text-red-500 text-xs px-1">{error}</p>}
+          {message && <p className="text-green-600 text-xs px-1">{message}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#1C1C1E] text-white text-sm font-semibold rounded-xl hover:opacity-80 disabled:opacity-40 transition-opacity mt-1"
+            className="w-full h-14 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:opacity-80 disabled:opacity-40 transition-opacity"
           >
             {loading ? '…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
           </button>
         </form>
 
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-line" />
-          <span className="text-xs text-ink-3">or</span>
-          <div className="flex-1 h-px bg-line" />
+        {/* Divider */}
+        <div className="w-full flex items-center gap-3 my-4">
+          <div className="flex-1 h-px bg-gray-100" />
+          <span className="text-xs text-gray-400">or</span>
+          <div className="flex-1 h-px bg-gray-100" />
         </div>
 
+        {/* Google */}
         <button
           type="button"
           onClick={handleGoogle}
-          className="w-full py-3 bg-surface border border-line text-ink text-sm font-medium rounded-xl hover:bg-fill transition-colors flex items-center justify-center gap-2.5"
+          className="w-full h-14 bg-white border border-gray-200 text-gray-800 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2.5"
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4" xmlns="http://www.w3.org/2000/svg">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -110,6 +109,7 @@ export default function AuthScreen() {
           </svg>
           Continue with Google
         </button>
+
       </div>
     </div>
   )
