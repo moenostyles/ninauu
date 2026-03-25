@@ -8,6 +8,7 @@ interface Props {
   items: PackEntry[]
   savedPacks: SavedPack[]
   onRemove: (gear: PackEntry['gear']) => void
+  onClearAll: () => void
   onSave: (name: string, visibility: Visibility) => Promise<void>
   onLoad: (packId: string) => void
   onDeleteSaved: (packId: string) => void
@@ -30,7 +31,7 @@ function VisibilityLabel({ v }: { v: Visibility }) {
   return <><Lock size={10} strokeWidth={2} /> Private</>
 }
 
-export default function PackSummary({ items, savedPacks, onRemove, onSave, onLoad, onDeleteSaved, onToggleVisibility }: Props) {
+export default function PackSummary({ items, savedPacks, onRemove, onClearAll, onSave, onLoad, onDeleteSaved, onToggleVisibility }: Props) {
   const [showSaveInput, setShowSaveInput] = useState(false)
   const [saveName, setSaveName] = useState('')
   const [saveVisibility, setSaveVisibility] = useState<Visibility>('private')
@@ -60,7 +61,15 @@ export default function PackSummary({ items, savedPacks, onRemove, onSave, onLoa
       {/* Total weight + Big 3 */}
       <div className="bg-ink text-surface rounded-2xl px-5 py-4 flex items-center gap-4">
         <div className="flex-1">
-          <p className="text-[10px] text-ink-3 uppercase tracking-widest">Total Weight</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-ink-3 uppercase tracking-widest">Total Weight</p>
+            <button
+              onClick={onClearAll}
+              className="text-[10px] text-ink-3 hover:text-surface transition-colors"
+            >
+              Clear all
+            </button>
+          </div>
           <p className="text-3xl font-bold mt-0.5 nums leading-none">{fmtWeight(totalWeight)}</p>
           <p className="text-[10px] text-ink-3 mt-1">
             {items.reduce((s, e) => s + e.quantity, 0)} items

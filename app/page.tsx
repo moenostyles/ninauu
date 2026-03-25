@@ -92,15 +92,17 @@ export default function Home() {
   const handleLoadPack = async (packId: string) => {
     const { data } = await supabase.from('saved_pack_items').select('*').eq('pack_id', packId)
     if (!data) return
-    const entries: PackEntry[] = []
-    for (const item of data) {
+    const entries: PackEntry[] = data.map((item) => {
       const gear = item.gear_id ? gears.find((g) => g.id === item.gear_id) : null
-      entries.push({
+      return {
         gear: gear ?? { id: item.gear_id ?? item.id, name: item.gear_name, brand: item.brand, weight_g: item.weight_g, category: item.category, created_at: '' },
         quantity: item.quantity,
-      })
-    }
+      }
+    })
     setPackItems(entries)
+    // Reset filters so all selected gear is visible
+    setFilterParent('All')
+    setFilterChild('All')
     setActiveTab('gear')
   }
 
@@ -227,6 +229,7 @@ export default function Home() {
             items={packItems}
             savedPacks={savedPacks}
             onRemove={togglePackItem}
+            onClearAll={() => setPackItems([])}
             onSave={handleSavePack}
             onLoad={handleLoadPack}
             onDeleteSaved={handleDeleteSavedPack}
