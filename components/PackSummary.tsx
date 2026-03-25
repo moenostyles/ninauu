@@ -56,7 +56,8 @@ export default function PackSummary({ items, savedPacks, onRemove, onClearAll, o
     setShowSaveInput(false)
   }
 
-  if (items.length === 0) return null
+  const itemCount = items.reduce((s, e) => s + e.quantity, 0)
+  const isEmpty = items.length === 0
 
   return (
     <div className="mb-4 space-y-2">
@@ -65,39 +66,39 @@ export default function PackSummary({ items, savedPacks, onRemove, onClearAll, o
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <p className="text-[10px] text-ink-3 uppercase tracking-widest">Total Weight</p>
-            <button
-              onClick={onClearAll}
-              className="text-[10px] text-ink-3 hover:text-surface transition-colors"
-            >
-              Clear all
-            </button>
+            {!isEmpty && (
+              <button
+                onClick={onClearAll}
+                className="text-[10px] text-ink-3 hover:text-surface transition-colors"
+              >
+                Clear all
+              </button>
+            )}
           </div>
           <p className="text-3xl font-bold mt-0.5 nums leading-none">{fmtWeight(totalWeight)}</p>
           <p className="text-[10px] text-ink-3 mt-1">
-            {(() => { const count = items.reduce((s, e) => s + e.quantity, 0); return `${count} ${count === 1 ? 'item' : 'items'}` })()}
+            {isEmpty ? '0 items' : `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
           </p>
         </div>
 
-        {big3Weight > 0 && (
-          <div className="grid grid-cols-4 gap-3 border-l border-ink-2 pl-4">
-            <div>
-              <p className="text-[9px] text-ink-3 uppercase tracking-wider">Shelter</p>
-              <p className="text-xs font-semibold nums">{shelterWeight > 0 ? fmtWeight(shelterWeight) : '—'}</p>
-            </div>
-            <div>
-              <p className="text-[9px] text-ink-3 uppercase tracking-wider">Pack</p>
-              <p className="text-xs font-semibold nums">{backpackWeight > 0 ? fmtWeight(backpackWeight) : '—'}</p>
-            </div>
-            <div>
-              <p className="text-[9px] text-ink-3 uppercase tracking-wider">Sleep</p>
-              <p className="text-xs font-semibold nums">{sleepWeight > 0 ? fmtWeight(sleepWeight) : '—'}</p>
-            </div>
-            <div className="border-l border-ink-2 pl-2">
-              <p className="text-[9px] text-ink-3 uppercase tracking-wider">Big 3</p>
-              <p className="text-xs font-bold nums">{fmtWeight(big3Weight)}</p>
-            </div>
+        <div className="grid grid-cols-4 gap-3 border-l border-ink-2 pl-4">
+          <div>
+            <p className="text-[9px] text-ink-3 uppercase tracking-wider">Shelter</p>
+            <p className="text-xs font-semibold nums">{shelterWeight > 0 ? fmtWeight(shelterWeight) : '—'}</p>
           </div>
-        )}
+          <div>
+            <p className="text-[9px] text-ink-3 uppercase tracking-wider">Pack</p>
+            <p className="text-xs font-semibold nums">{backpackWeight > 0 ? fmtWeight(backpackWeight) : '—'}</p>
+          </div>
+          <div>
+            <p className="text-[9px] text-ink-3 uppercase tracking-wider">Sleep</p>
+            <p className="text-xs font-semibold nums">{sleepWeight > 0 ? fmtWeight(sleepWeight) : '—'}</p>
+          </div>
+          <div className="border-l border-ink-2 pl-2">
+            <p className="text-[9px] text-ink-3 uppercase tracking-wider">Big 3</p>
+            <p className="text-xs font-bold nums">{big3Weight > 0 ? fmtWeight(big3Weight) : '—'}</p>
+          </div>
+        </div>
       </div>
 
       {/* Toolbar */}
@@ -109,12 +110,14 @@ export default function PackSummary({ items, savedPacks, onRemove, onClearAll, o
           <ChevronDown size={13} strokeWidth={2} className={`transition-transform ${showSavedPacks ? 'rotate-180' : ''}`} />
           Saved packs{savedPacks.length > 0 ? ` (${savedPacks.length})` : ''}
         </button>
-        <button
-          onClick={() => setShowSaveInput(p => !p)}
-          className="text-xs px-3 py-1.5 border border-line rounded-lg text-ink-2 hover:bg-fill transition-colors"
-        >
-          {showSaveInput ? 'Cancel' : 'Save pack'}
-        </button>
+        {!isEmpty && (
+          <button
+            onClick={() => setShowSaveInput(p => !p)}
+            className="text-xs px-3 py-1.5 border border-line rounded-lg text-ink-2 hover:bg-fill transition-colors"
+          >
+            {showSaveInput ? 'Cancel' : 'Save pack'}
+          </button>
+        )}
       </div>
 
       {/* Saved packs panel */}
