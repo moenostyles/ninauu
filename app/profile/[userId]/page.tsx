@@ -471,7 +471,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* ── 退会 (自分のプロフィールのみ) ── */}
+      {/* Delete account (own profile only) */}
       {isOwn && (
         <div className="mt-12 pt-8 border-t border-line">
           {!showDeleteConfirm ? (
@@ -479,12 +479,12 @@ export default function ProfilePage() {
               onClick={() => setShowDeleteConfirm(true)}
               className="text-xs text-ink-3 hover:text-red-500 transition-colors"
             >
-              退会する
+              Delete account
             </button>
           ) : (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-5 space-y-3">
-              <p className="text-sm font-semibold text-red-600">本当に退会しますか？</p>
-              <p className="text-xs text-red-400">アカウントとすべてのデータが完全に削除されます。この操作は取り消せません。</p>
+              <p className="text-sm font-semibold text-red-600">Delete your account?</p>
+              <p className="text-xs text-red-400">Your account and all data will be permanently deleted. This cannot be undone.</p>
               <div className="flex gap-2">
                 <button
                   onClick={async () => {
@@ -498,20 +498,20 @@ export default function ProfilePage() {
                       await supabase.auth.signOut()
                       router.push('/')
                     } else {
-                      alert('退会処理に失敗しました。')
+                      alert('Failed to delete account.')
                       setDeleting(false)
                     }
                   }}
                   disabled={deleting}
                   className="px-4 py-2 bg-red-500 text-white text-xs font-medium rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50"
                 >
-                  {deleting ? '処理中...' : '退会する'}
+                  {deleting ? 'Deleting…' : 'Delete account'}
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
                   className="px-4 py-2 bg-surface border border-line text-xs font-medium rounded-xl hover:bg-fill transition-colors"
                 >
-                  キャンセル
+                  Cancel
                 </button>
               </div>
             </div>
