@@ -312,7 +312,7 @@ export default function Home() {
               <TripForm packItems={packItems.map((e) => e.gear)} onSuccess={() => { setShowTripForm(false); fetchTrips() }} />
             </div>
           )}
-          <TripList trips={trips} onRefresh={fetchTrips} />
+          <TripList trips={trips} onRefresh={fetchTrips} onNewTrip={() => setShowTripForm(true)} />
         </div>
       )}
 
