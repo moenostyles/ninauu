@@ -21,56 +21,34 @@ interface Props {
   initialQuery?: string
 }
 
-// ── client-side search ───────────────────────────────────────────────
-// 優先度: ブランド完全一致 > ブランド前方一致 > ブランド部分一致 > 名前一致
-// AND検索を試み、0件の場合は最多マッチ数のアイテムにフォールバック
-function scoreItem(tokens: string[], brandL: string, nameL: string, catL: string): number {
-  const fullQuery = tokens.join(' ')
-  let score = 0
-
-  // ブランド一致ボーナス（クエリ全体がブランドに一致）
-  if (brandL === fullQuery)        score += 20  // 完全一致
-  else if (brandL.startsWith(fullQuery)) score += 10  // 前方一致
-
-  for (const t of tokens) {
-    if (brandL === t)              score += 8   // トークンがブランドに完全一致
-    else if (brandL.startsWith(t)) score += 4   // ブランド前方一致
-    else if (brandL.includes(t))   score += 1   // ブランド部分一致
-    if (nameL.includes(t))         score += 2   // 名前一致
-    if (catL.includes(t))          score += 0.5 // カテゴリ一致
-  }
-  return score
-}
-
+// ── client-side AND search ───────────────────────────────────────────
+// 全トークンが (brand + " " + name) に含まれる製品のみ返す
+// ソート: 第1トークンとブランド名が完全一致 > 前方一致 > 部分一致
 function searchGear(query: string, items: GearSeedItem[]): GearSeedItem[] {
   const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean)
   if (tokens.length === 0) return []
 
-  const scored: { item: GearSeedItem; score: number; matchCount: number }[] = []
+  // AND フィルタ: 全トークンが brand+name に含まれること
+  const results = items.filter((item) => {
+    const target = (item.brand + ' ' + item.name).toLowerCase()
+    return tokens.every((t) => target.includes(t))
+  })
 
-  for (const item of items) {
-    const brandL = item.brand.toLowerCase()
-    const nameL  = item.name.toLowerCase()
-    const catL   = (item.subcategory || item.category).toLowerCase()
+  // ソート: 第1トークンに対するブランド一致度を優先
+  const t0 = tokens[0]
+  results.sort((a, b) => {
+    const aB = a.brand.toLowerCase()
+    const bB = b.brand.toLowerCase()
+    const rank = (s: string) => {
+      if (s === t0)           return 0  // 完全一致
+      if (s.startsWith(t0))  return 1  // 前方一致
+      if (s.includes(t0))    return 2  // 部分一致
+      return 3                          // 名前一致のみ
+    }
+    return rank(aB) - rank(bB)
+  })
 
-    const matchCount = tokens.filter(
-      (t) => brandL.includes(t) || nameL.includes(t) || catL.includes(t)
-    ).length
-
-    if (matchCount === 0) continue
-
-    const score = scoreItem(tokens, brandL, nameL, catL)
-    scored.push({ item, score, matchCount })
-  }
-
-  // まず全トークンマッチ（AND）を試みる
-  const andResults = scored.filter((r) => r.matchCount === tokens.length)
-  const pool = andResults.length > 0 ? andResults : scored  // 0件なら全マッチにフォールバック
-
-  return pool
-    .sort((a, b) => b.score - a.score || b.matchCount - a.matchCount)
-    .slice(0, 10)
-    .map(({ item }) => item)
+  return results.slice(0, 20)
 }
 
 export default function GearSearchFromDB({ onSuccess, onManual, initialQuery = '' }: Props) {
