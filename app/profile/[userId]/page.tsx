@@ -118,6 +118,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [followLoading, setFollowLoading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
 
   const [isBlocked, setIsBlocked] = useState(false)
@@ -549,10 +550,39 @@ export default function ProfilePage() {
               Delete account
             </button>
           ) : (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-5 space-y-3">
-              <p className="text-sm font-semibold text-red-600">Delete your account?</p>
-              <p className="text-xs text-red-400">Your account and all data will be permanently deleted. This cannot be undone.</p>
-              <div className="flex gap-2">
+            <div className="bg-surface border border-line rounded-2xl p-5 space-y-4">
+              {/* タイトル・説明 — 赤なし */}
+              <div className="space-y-1.5">
+                <p className="text-sm font-semibold text-ink">Delete your account?</p>
+                <p className="text-xs text-ink-3 leading-relaxed">
+                  Your account and all data will be permanently deleted.<br />
+                  This cannot be undone.
+                </p>
+              </div>
+
+              {/* 確認入力 */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-ink-3">
+                  Type <span className="font-mono font-semibold text-ink">DELETE</span> to confirm
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={e => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE"
+                  autoComplete="off"
+                  className="w-full border border-line rounded-xl px-3 py-2 text-sm bg-fill focus:outline-none focus:ring-2 focus:ring-ink font-mono placeholder:text-ink-3/40"
+                />
+              </div>
+
+              {/* ボタン — Cancel が左・目立つ、Delete が右・控えめ赤 */}
+              <div className="flex gap-2 pt-0.5">
+                <button
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText('') }}
+                  className="flex-1 py-2 bg-ink text-surface text-xs font-medium rounded-xl hover:bg-ink-2 transition-colors"
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={async () => {
                     setDeleting(true)
@@ -569,16 +599,10 @@ export default function ProfilePage() {
                       setDeleting(false)
                     }
                   }}
-                  disabled={deleting}
-                  className="px-4 py-2 bg-red-500 text-white text-xs font-medium rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50"
+                  disabled={deleting || deleteConfirmText !== 'DELETE'}
+                  className="flex-1 py-2 border border-red-400 text-red-500 text-xs font-medium rounded-xl hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   {deleting ? 'Deleting…' : 'Delete account'}
-                </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2 bg-surface border border-line text-xs font-medium rounded-xl hover:bg-fill transition-colors"
-                >
-                  Cancel
                 </button>
               </div>
             </div>
