@@ -39,26 +39,25 @@ export default function Home() {
   const [gearInitialName, setGearInitialName] = useState('')
 
   // ── Onboarding ──
-  // Skipしたかどうかだけ localStorage で管理。
-  // Big3 が揃ったかどうかは gears の状態から純粋に導出する（状態管理しない）。
-  const [onboardingSkipped, setOnboardingSkipped] = useState(false)
-  useEffect(() => {
-    setOnboardingSkipped(!!localStorage.getItem('ninauu_onboarding_v2'))
-  }, [])
+  // localStorage を初回レンダー時に同期読み取り（useEffect 不要）
+  const [onboardingSkipped, setOnboardingSkipped] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return !!localStorage.getItem('ninauu_onboarding_v2')
+  })
 
   const skipOnboarding = () => {
     localStorage.setItem('ninauu_onboarding_v2', '1')
     setOnboardingSkipped(true)
   }
 
-  // Big3 達成状況 — gears から毎レンダー導出（stateにしない）
+  // Big3 達成状況 — gears から毎レンダー純粋に導出（state 管理しない）
   const registeredBig3 = new Set(
     gears.map((g) => g.category).filter((c) => BIG3_CATEGORIES.includes(c))
   )
   const allBig3Done = BIG3_CATEGORIES.every((c) => registeredBig3.has(c))
 
-  // 表示条件：Skip未実施 AND ローディング完了 AND Big3未完了 AND Gearタブ
-  // allBig3Done が true になると自然に非表示になる（余計な副作用なし）
+  // 表示条件: Skip未実施 AND ロード完了 AND Big3未完了 AND Gearタブ
+  // ※ addMode の値に依存しない（検索パネルと同時表示する）
   const showOnboarding = !onboardingSkipped && !loading && !allBig3Done && activeTab === 'gear'
 
   const fetchGears = useCallback(async () => {
@@ -273,7 +272,8 @@ export default function Home() {
           </div>
 
           {/* Onboarding — Big3未完了かつSkip未実施のユーザーのみ */}
-          {showOnboarding && !addMode && (
+          {/* addMode に依存しない：検索パネルと同時表示してプログレスを常に見せる */}
+          {showOnboarding && (
             <Onboarding
               registeredCategories={registeredBig3}
               onAdd={(query) => {
@@ -290,7 +290,13 @@ export default function Home() {
               <GearSearchFromDB
                 key={searchInitialQuery}
                 initialQuery={searchInitialQuery}
-                onSuccess={() => { setSearchInitialQuery(''); fetchGears() }}
+                onSuccess={() => {
+                  // オンボーディングから開いた場合（searchInitialQuery がセットされている）は
+                  // 追加後にパネルを閉じてプログレスを確認できるようにする
+                  if (searchInitialQuery) setAddMode(null)
+                  setSearchInitialQuery('')
+                  fetchGears()
+                }}
                 onManual={(name) => { setGearInitialName(name); setAddMode('manual') }}
               />
             </div>
