@@ -62,10 +62,10 @@ export default function Header() {
   return (
     <header className="bg-ink text-surface sticky top-0 z-50">
       <div className="max-w-2xl mx-auto px-5 py-2 flex items-center justify-between">
-        <div>
+        <Link href="/" className="hover:opacity-75 transition-opacity">
           <h1 className="text-lg font-medium text-surface">Ninauu</h1>
           <p className="text-[12px] text-ink-3">Essentials, only.</p>
-        </div>
+        </Link>
 
         {user && (
           <div className="flex items-center gap-3">
