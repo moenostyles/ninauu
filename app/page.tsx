@@ -39,26 +39,27 @@ export default function Home() {
   const [gearInitialName, setGearInitialName] = useState('')
 
   // ── Onboarding ──
-  const [onboardingActive, setOnboardingActive] = useState(false)
+  // Skipしたかどうかだけ localStorage で管理。
+  // Big3 が揃ったかどうかは gears の状態から純粋に導出する（状態管理しない）。
+  const [onboardingSkipped, setOnboardingSkipped] = useState(false)
   useEffect(() => {
-    if (!localStorage.getItem('ninauu_onboarding_done')) {
-      setOnboardingActive(true)
-    }
+    setOnboardingSkipped(!!localStorage.getItem('ninauu_onboarding_v2'))
   }, [])
-  const dismissOnboarding = () => {
-    localStorage.setItem('ninauu_onboarding_done', '1')
-    setOnboardingActive(false)
-  }
-  const registeredBig3 = new Set(gears.map((g) => g.category).filter((c) => BIG3_CATEGORIES.includes(c)))
-  const allBig3Done = BIG3_CATEGORIES.every((c) => registeredBig3.has(c))
-  // Auto-dismiss when all Big 3 are registered
-  useEffect(() => {
-    if (!loading && onboardingActive && allBig3Done) {
-      dismissOnboarding()
-    }
-  }, [loading, onboardingActive, allBig3Done]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const showOnboarding = onboardingActive && !loading && !allBig3Done && activeTab === 'gear'
+  const skipOnboarding = () => {
+    localStorage.setItem('ninauu_onboarding_v2', '1')
+    setOnboardingSkipped(true)
+  }
+
+  // Big3 達成状況 — gears から毎レンダー導出（stateにしない）
+  const registeredBig3 = new Set(
+    gears.map((g) => g.category).filter((c) => BIG3_CATEGORIES.includes(c))
+  )
+  const allBig3Done = BIG3_CATEGORIES.every((c) => registeredBig3.has(c))
+
+  // 表示条件：Skip未実施 AND ローディング完了 AND Big3未完了 AND Gearタブ
+  // allBig3Done が true になると自然に非表示になる（余計な副作用なし）
+  const showOnboarding = !onboardingSkipped && !loading && !allBig3Done && activeTab === 'gear'
 
   const fetchGears = useCallback(async () => {
     if (!user) return
@@ -271,7 +272,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Onboarding — 初回ユーザーのみ */}
+          {/* Onboarding — Big3未完了かつSkip未実施のユーザーのみ */}
           {showOnboarding && !addMode && (
             <Onboarding
               registeredCategories={registeredBig3}
@@ -280,7 +281,7 @@ export default function Home() {
                 setGearInitialName('')
                 setAddMode('search')
               }}
-              onSkip={dismissOnboarding}
+              onSkip={skipOnboarding}
             />
           )}
 
