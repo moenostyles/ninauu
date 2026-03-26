@@ -533,12 +533,9 @@ export default function ProfilePage() {
 
       {trips.length === 0 && packs.length === 0 && (
         <div className="text-center py-14">
-          <svg viewBox="0 0 96 72" className="w-24 mx-auto mb-4 text-line" fill="currentColor" aria-hidden>
-            <polygon points="48,6 84,66 12,66" />
-            <polygon points="72,24 96,66 48,66" opacity="0.45" />
-            <circle cx="22" cy="20" r="7" opacity="0.3" />
-          </svg>
-          <p className="text-sm text-ink-3">No public packs or trips yet.</p>
+          <div className="text-4xl mb-3">🏕️</div>
+          <p className="text-sm font-medium text-ink-2">Browse packing lists from other hikers</p>
+          <p className="text-xs text-ink-3 mt-1">Public packs and trips will appear here</p>
         </div>
       )}
 
