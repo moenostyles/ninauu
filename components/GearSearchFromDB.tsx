@@ -22,33 +22,34 @@ interface Props {
 }
 
 // ── client-side AND search ───────────────────────────────────────────
-// 全トークンが (brand + " " + name) に含まれる製品のみ返す
+// 検索対象は brand + name のみ（category / subcategory / description は除外）
+// 全トークンが対象文字列に含まれる製品のみ返す（AND条件）
 // ソート: 第1トークンとブランド名が完全一致 > 前方一致 > 部分一致
 function searchGear(query: string, items: GearSeedItem[]): GearSeedItem[] {
   const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean)
   if (tokens.length === 0) return []
 
-  // AND フィルタ: 全トークンが brand+name に含まれること
-  const results = items.filter((item) => {
+  // ★ AND フィルタ: brand + name 連結のみを対象に全トークンチェック
+  const filtered = items.filter((item) => {
     const target = (item.brand + ' ' + item.name).toLowerCase()
-    return tokens.every((t) => target.includes(t))
+    return tokens.every((token) => target.includes(token))
   })
 
   // ソート: 第1トークンに対するブランド一致度を優先
   const t0 = tokens[0]
-  results.sort((a, b) => {
+  filtered.sort((a, b) => {
     const aB = a.brand.toLowerCase()
     const bB = b.brand.toLowerCase()
     const rank = (s: string) => {
-      if (s === t0)           return 0  // 完全一致
-      if (s.startsWith(t0))  return 1  // 前方一致
-      if (s.includes(t0))    return 2  // 部分一致
-      return 3                          // 名前一致のみ
+      if (s === t0)           return 0  // ブランド完全一致
+      if (s.startsWith(t0))  return 1  // ブランド前方一致
+      if (s.includes(t0))    return 2  // ブランド部分一致
+      return 3                          // 名前のみで一致
     }
     return rank(aB) - rank(bB)
   })
 
-  return results.slice(0, 20)
+  return filtered.slice(0, 20)
 }
 
 export default function GearSearchFromDB({ onSuccess, onManual, initialQuery = '' }: Props) {
