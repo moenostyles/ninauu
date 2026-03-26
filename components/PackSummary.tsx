@@ -16,10 +16,6 @@ interface Props {
   onToggleVisibility: (packId: string, visibility: Visibility) => void
 }
 
-function fmtWeightG(g: number) {
-  return g >= 1000 ? `${(g / 1000).toFixed(2)}kg` : `${g}g`
-}
-
 function nextVisibility(v: Visibility): Visibility {
   if (v === 'public') return 'followers'
   if (v === 'followers') return 'private'
@@ -27,24 +23,90 @@ function nextVisibility(v: Visibility): Visibility {
 }
 
 function VisibilityLabel({ v }: { v: Visibility }) {
-  if (v === 'public') return <><Globe size={10} strokeWidth={2} /> Public</>
+  if (v === 'public')    return <><Globe size={10} strokeWidth={2} /> Public</>
   if (v === 'followers') return <><Users size={10} strokeWidth={2} /> Followers</>
   return <><Lock size={10} strokeWidth={2} /> Private</>
 }
 
-export default function PackSummary({ items, savedPacks, onRemove, onClearAll, onSave, onLoad, onDeleteSaved, onToggleVisibility }: Props) {
-  const { fmt: fmtWeight, unit } = useWeightUnit()
-  const [showSaveInput, setShowSaveInput] = useState(false)
-  const [saveName, setSaveName] = useState('')
+// ── カテゴリカラー (GearList の左ボーダーと同色系) ──────────────────
+const DONUT_COLORS = {
+  shelter: '#60A5FA',  // blue-400
+  pack:    '#34D399',  // emerald-400
+  sleep:   '#A78BFA',  // violet-400
+  others:  '#6B7280',  // gray-500
+}
+
+// ── SVG ドーナツチャート ─────────────────────────────────────────────
+function DonutChart({
+  shelter, pack, sleep, others,
+}: { shelter: number; pack: number; sleep: number; others: number }) {
+  const total = shelter + pack + sleep + others
+  if (total === 0) return null
+
+  const cx = 40, cy = 40, r = 30, sw = 12
+  const C = 2 * Math.PI * r   // ≈ 188.5
+
+  const segs = [
+    { v: shelter, c: DONUT_COLORS.shelter },
+    { v: pack,    c: DONUT_COLORS.pack    },
+    { v: sleep,   c: DONUT_COLORS.sleep   },
+    { v: others,  c: DONUT_COLORS.others  },
+  ]
+
+  let offset = 0
+  return (
+    <svg
+      width="64" height="64"
+      viewBox="0 0 80 80"
+      style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}
+      aria-hidden
+    >
+      {/* トラック */}
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#374151" strokeWidth={sw} />
+      {/* セグメント */}
+      {segs.map(({ v, c }, i) => {
+        if (v <= 0) return null
+        const arc = (v / total) * C
+        const node = (
+          <circle
+            key={i}
+            cx={cx} cy={cy} r={r}
+            fill="none"
+            stroke={c}
+            strokeWidth={sw}
+            strokeDasharray={`${arc} ${C - arc}`}
+            strokeDashoffset={-offset}
+          />
+        )
+        offset += arc
+        return node
+      })}
+    </svg>
+  )
+}
+
+export default function PackSummary({
+  items, savedPacks, onRemove, onClearAll, onSave, onLoad, onDeleteSaved, onToggleVisibility,
+}: Props) {
+  const { fmt: fmtWeight } = useWeightUnit()
+  const [showSaveInput,  setShowSaveInput]  = useState(false)
+  const [saveName,       setSaveName]       = useState('')
   const [saveVisibility, setSaveVisibility] = useState<Visibility>('private')
-  const [saving, setSaving] = useState(false)
+  const [saving,         setSaving]         = useState(false)
   const [showSavedPacks, setShowSavedPacks] = useState(false)
 
   const totalWeight    = items.reduce((s, e) => s + e.gear.weight_g * e.quantity, 0)
-  const shelterWeight  = items.filter(e => e.gear.category === 'Tent' || e.gear.category === 'Tarp').reduce((s, e) => s + e.gear.weight_g * e.quantity, 0)
-  const backpackWeight = items.filter(e => e.gear.category === 'Backpack').reduce((s, e) => s + e.gear.weight_g * e.quantity, 0)
-  const sleepWeight    = items.filter(e => e.gear.category === 'Sleeping Bag' || e.gear.category === 'Sleeping Mat').reduce((s, e) => s + e.gear.weight_g * e.quantity, 0)
+  const shelterWeight  = items.filter(e => e.gear.category === 'Tent' || e.gear.category === 'Tarp')
+                              .reduce((s, e) => s + e.gear.weight_g * e.quantity, 0)
+  const backpackWeight = items.filter(e => e.gear.category === 'Backpack')
+                              .reduce((s, e) => s + e.gear.weight_g * e.quantity, 0)
+  const sleepWeight    = items.filter(e => e.gear.category === 'Sleeping Bag' || e.gear.category === 'Sleeping Mat')
+                              .reduce((s, e) => s + e.gear.weight_g * e.quantity, 0)
   const big3Weight     = shelterWeight + backpackWeight + sleepWeight
+  const othersWeight   = Math.max(0, totalWeight - big3Weight)
+
+  const itemCount = items.reduce((s, e) => s + e.quantity, 0)
+  const isEmpty   = items.length === 0
 
   const handleSave = async () => {
     if (!saveName.trim()) return
@@ -56,58 +118,82 @@ export default function PackSummary({ items, savedPacks, onRemove, onClearAll, o
     setShowSaveInput(false)
   }
 
-  const itemCount = items.reduce((s, e) => s + e.quantity, 0)
-  const isEmpty = items.length === 0
-
   return (
     <div className="mb-4 space-y-2">
-      {/* Total weight + Big 3 */}
-      <div className="bg-ink text-surface rounded-2xl px-5 py-4 flex items-center gap-4">
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] text-ink-3 uppercase tracking-widest">Total Weight</p>
-            {!isEmpty && (
-              <button
-                onClick={onClearAll}
-                className="text-[10px] text-ink-3 hover:text-surface transition-colors"
-              >
-                Clear all
-              </button>
-            )}
+
+      {/* ── TOTAL WEIGHT バー ─────────────────────────────────── */}
+      <div className="bg-ink text-surface rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 flex items-center gap-3">
+
+          {/* ドーナツチャート（アイテムありの時のみ） */}
+          {!isEmpty && (
+            <DonutChart
+              shelter={shelterWeight}
+              pack={backpackWeight}
+              sleep={sleepWeight}
+              others={othersWeight}
+            />
+          )}
+
+          {/* 左：合計重量 */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <p className="text-[9px] text-ink-3 uppercase tracking-widest">Total Weight</p>
+              {!isEmpty && (
+                <button onClick={onClearAll} className="text-[10px] text-ink-3 hover:text-surface transition-colors">
+                  Clear all
+                </button>
+              )}
+            </div>
+            <p className="text-2xl font-bold mt-0.5 nums leading-none">{fmtWeight(totalWeight)}</p>
+            <p className="text-[10px] text-ink-3 mt-0.5">
+              {isEmpty
+                ? <span className="opacity-60">Check items to build your pack</span>
+                : `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`
+              }
+            </p>
           </div>
-          <p className="text-3xl font-bold mt-0.5 nums leading-none">{fmtWeight(totalWeight)}</p>
-          <p className="text-[10px] text-ink-3 mt-1">
-            {isEmpty ? '0 items' : `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
-          </p>
+
+          {/* 右：カテゴリ内訳（アイテムありの時のみ） */}
+          {!isEmpty && (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 border-l border-ink-2 pl-3 shrink-0">
+              {[
+                { label: 'Shelter', w: shelterWeight, c: DONUT_COLORS.shelter },
+                { label: 'Pack',    w: backpackWeight, c: DONUT_COLORS.pack    },
+                { label: 'Sleep',   w: sleepWeight,    c: DONUT_COLORS.sleep   },
+                { label: 'Big 3',   w: big3Weight,     c: '#F9FAFB', bold: true },
+              ].map(({ label, w, c, bold }) => (
+                <div key={label}>
+                  <p className="text-[9px] uppercase tracking-wider" style={{ color: c, opacity: bold ? 1 : 0.8 }}>
+                    {label}
+                  </p>
+                  <p className={`text-xs nums ${bold ? 'font-bold' : 'font-medium'}`}>
+                    {w > 0 ? fmtWeight(w) : '—'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-4 gap-3 border-l border-ink-2 pl-4">
-          <div>
-            <p className="text-[9px] text-ink-3 uppercase tracking-wider">Shelter</p>
-            <p className="text-xs font-semibold nums">{shelterWeight > 0 ? fmtWeight(shelterWeight) : '—'}</p>
+        {/* ── 水平スタックバー（アイテムありの時） ── */}
+        {!isEmpty && totalWeight > 0 && (
+          <div className="flex h-1" aria-hidden>
+            {shelterWeight  > 0 && <div style={{ flex: shelterWeight,  background: DONUT_COLORS.shelter }} />}
+            {backpackWeight > 0 && <div style={{ flex: backpackWeight, background: DONUT_COLORS.pack    }} />}
+            {sleepWeight    > 0 && <div style={{ flex: sleepWeight,    background: DONUT_COLORS.sleep   }} />}
+            {othersWeight   > 0 && <div style={{ flex: othersWeight,   background: DONUT_COLORS.others  }} />}
           </div>
-          <div>
-            <p className="text-[9px] text-ink-3 uppercase tracking-wider">Pack</p>
-            <p className="text-xs font-semibold nums">{backpackWeight > 0 ? fmtWeight(backpackWeight) : '—'}</p>
-          </div>
-          <div>
-            <p className="text-[9px] text-ink-3 uppercase tracking-wider">Sleep</p>
-            <p className="text-xs font-semibold nums">{sleepWeight > 0 ? fmtWeight(sleepWeight) : '—'}</p>
-          </div>
-          <div className="border-l border-ink-2 pl-2">
-            <p className="text-[9px] text-ink-3 uppercase tracking-wider">Big 3</p>
-            <p className="text-xs font-bold nums">{big3Weight > 0 ? fmtWeight(big3Weight) : '—'}</p>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Toolbar */}
+      {/* ── ツールバー ─────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => setShowSavedPacks(p => !p)}
           className="text-xs text-ink-3 hover:text-ink transition-colors flex items-center gap-1"
         >
-          <ChevronDown size={13} strokeWidth={2} className={`transition-transform ${showSavedPacks ? 'rotate-180' : ''}`} />
+          <ChevronDown size={13} strokeWidth={2} className={`transition-transform duration-150 ${showSavedPacks ? 'rotate-180' : ''}`} />
           Saved packs{savedPacks.length > 0 ? ` (${savedPacks.length})` : ''}
         </button>
         {!isEmpty && (
@@ -120,7 +206,7 @@ export default function PackSummary({ items, savedPacks, onRemove, onClearAll, o
         )}
       </div>
 
-      {/* Saved packs panel */}
+      {/* ── Saved packs パネル ────────────────────────────────── */}
       {showSavedPacks && (
         <div className="bg-fill rounded-2xl p-3 space-y-1.5">
           {savedPacks.length === 0 ? (
@@ -151,7 +237,7 @@ export default function PackSummary({ items, savedPacks, onRemove, onClearAll, o
         </div>
       )}
 
-      {/* Save input */}
+      {/* ── Save input ───────────────────────────────────────── */}
       {showSaveInput && (
         <div className="flex gap-2">
           <input
