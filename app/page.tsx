@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Plus, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
@@ -35,6 +35,8 @@ export default function Home() {
   const [filterParent, setFilterParent] = useState<string>('All')
   const [filterChild, setFilterChild] = useState<string>('All')
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'weight_asc' | 'weight_desc'>('date')
+  const [showSortMenu, setShowSortMenu] = useState(false)
+  const sortMenuRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [gearInitialName, setGearInitialName] = useState('')
 
@@ -44,6 +46,18 @@ export default function Home() {
     if (typeof window === 'undefined') return false
     return !!localStorage.getItem('ninauu_onboarding_v2')
   })
+
+  // ソートメニュー外クリックで閉じる
+  useEffect(() => {
+    if (!showSortMenu) return
+    const close = (e: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+        setShowSortMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [showSortMenu])
 
   const skipOnboarding = () => {
     localStorage.setItem('ninauu_onboarding_v2', '1')
@@ -247,28 +261,47 @@ export default function Home() {
               </div>
             )}
 
-            {/* Sort */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-ink-3 uppercase tracking-wider shrink-0">Sort</span>
-              {([
-                { key: 'date',         label: 'Latest'      },
-                { key: 'name',         label: 'Name'        },
-                { key: 'weight_asc',   label: 'Light → Heavy' },
-                { key: 'weight_desc',  label: 'Heavy → Light' },
-              ] as const).map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setSortBy(key)}
-                  className={`px-2.5 py-0.5 text-xs rounded-full border transition-colors whitespace-nowrap shrink-0 ${
-                    sortBy === key
-                      ? 'bg-ink text-surface border-ink'
-                      : 'bg-surface text-ink-3 border-line hover:border-ink hover:bg-fill'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            {/* Sort dropdown */}
+            {(() => {
+              const SORT_OPTIONS = [
+                { key: 'date',        label: 'Latest'        },
+                { key: 'name',        label: 'Name'          },
+                { key: 'weight_asc',  label: 'Light → Heavy' },
+                { key: 'weight_desc', label: 'Heavy → Light' },
+              ] as const
+              const currentLabel = SORT_OPTIONS.find(o => o.key === sortBy)?.label ?? 'Latest'
+              return (
+                <div ref={sortMenuRef} className="relative self-start">
+                  <button
+                    onClick={() => setShowSortMenu(p => !p)}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-full border border-line bg-surface text-ink-3 hover:border-ink hover:bg-fill transition-colors whitespace-nowrap"
+                  >
+                    <span className="text-[10px] uppercase tracking-wider text-ink-3">Sort</span>
+                    <span className="font-medium text-ink">{currentLabel}</span>
+                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className={`transition-transform duration-150 ${showSortMenu ? 'rotate-180' : ''}`}>
+                      <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                  {showSortMenu && (
+                    <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-line rounded-xl shadow-lg overflow-hidden py-0.5 w-36">
+                      {SORT_OPTIONS.map(({ key, label }) => (
+                        <button
+                          key={key}
+                          onClick={() => { setSortBy(key); setShowSortMenu(false) }}
+                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                            sortBy === key
+                              ? 'font-semibold text-ink bg-fill'
+                              : 'text-ink-2 hover:bg-fill'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </div>
 
           {/* Onboarding — Big3未完了かつSkip未実施のユーザーのみ */}

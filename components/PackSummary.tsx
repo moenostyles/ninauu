@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ChevronDown, Globe, Lock, Users, X } from 'lucide-react'
 import { PackEntry, SavedPack, Visibility } from '@/types'
 import { useWeightUnit } from '@/lib/weight-unit-context'
+import { BIG3_COLORS } from '@/lib/category-colors'
 
 interface Props {
   items: PackEntry[]
@@ -28,13 +29,8 @@ function VisibilityLabel({ v }: { v: Visibility }) {
   return <><Lock size={10} strokeWidth={2} /> Private</>
 }
 
-// ── カテゴリカラー (GearList の左ボーダーと同色系) ──────────────────
-const DONUT_COLORS = {
-  shelter: '#60A5FA',  // blue-400
-  pack:    '#34D399',  // emerald-400
-  sleep:   '#A78BFA',  // violet-400
-  others:  '#6B7280',  // gray-500
-}
+// ── カテゴリカラー (GearList の左ボーダーと共通) ─────────────────────
+const DONUT_COLORS = BIG3_COLORS
 
 // ── SVG ドーナツチャート ─────────────────────────────────────────────
 function DonutChart({
