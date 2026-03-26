@@ -15,9 +15,12 @@ import TripForm from '@/components/TripForm'
 import TripList from '@/components/TripList'
 import ExploreTab from '@/components/ExploreTab'
 import AuthScreen from '@/components/AuthScreen'
+import Onboarding from '@/components/Onboarding'
 
 type AddMode = null | 'search' | 'manual'
 type Tab = 'gear' | 'trips' | 'explore'
+
+const BIG3_CATEGORIES = ['Tent', 'Backpack', 'Sleeping Bag']
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth()
@@ -26,6 +29,7 @@ export default function Home() {
   const [savedPacks, setSavedPacks] = useState<SavedPack[]>([])
   const [packItems, setPackItems] = useState<PackEntry[]>([])
   const [addMode, setAddMode] = useState<AddMode>(null)
+  const [searchInitialQuery, setSearchInitialQuery] = useState('')
   const [showTripForm, setShowTripForm] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('gear')
   const [filterParent, setFilterParent] = useState<string>('All')
@@ -33,6 +37,28 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'weight_asc' | 'weight_desc'>('date')
   const [loading, setLoading] = useState(true)
   const [gearInitialName, setGearInitialName] = useState('')
+
+  // ── Onboarding ──
+  const [onboardingActive, setOnboardingActive] = useState(false)
+  useEffect(() => {
+    if (!localStorage.getItem('ninauu_onboarding_done')) {
+      setOnboardingActive(true)
+    }
+  }, [])
+  const dismissOnboarding = () => {
+    localStorage.setItem('ninauu_onboarding_done', '1')
+    setOnboardingActive(false)
+  }
+  const registeredBig3 = new Set(gears.map((g) => g.category).filter((c) => BIG3_CATEGORIES.includes(c)))
+  const allBig3Done = BIG3_CATEGORIES.every((c) => registeredBig3.has(c))
+  // Auto-dismiss when all Big 3 are registered
+  useEffect(() => {
+    if (!loading && onboardingActive && allBig3Done) {
+      dismissOnboarding()
+    }
+  }, [loading, onboardingActive, allBig3Done]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const showOnboarding = onboardingActive && !loading && !allBig3Done && activeTab === 'gear'
 
   const fetchGears = useCallback(async () => {
     if (!user) return
@@ -196,7 +222,7 @@ export default function Home() {
                 <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-fill to-transparent" />
               </div>
               <button
-                onClick={() => { setAddMode((p) => (p ? null : 'search')); setGearInitialName('') }}
+                onClick={() => { setAddMode((p) => (p ? null : 'search')); setGearInitialName(''); setSearchInitialQuery('') }}
                 className="hidden sm:flex shrink-0 items-center gap-1.5 px-4 py-2 bg-ink text-surface text-sm font-medium rounded-xl hover:bg-ink-2 transition-colors"
               >
                 {addMode ? 'Cancel' : <><Plus size={15} strokeWidth={2.5} />Add</>}
@@ -245,10 +271,25 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Onboarding — 初回ユーザーのみ */}
+          {showOnboarding && !addMode && (
+            <Onboarding
+              registeredCategories={registeredBig3}
+              onAdd={(query) => {
+                setSearchInitialQuery(query)
+                setGearInitialName('')
+                setAddMode('search')
+              }}
+              onSkip={dismissOnboarding}
+            />
+          )}
+
           {addMode === 'search' && (
             <div className="mb-4">
               <GearSearchFromDB
-                onSuccess={fetchGears}
+                key={searchInitialQuery}
+                initialQuery={searchInitialQuery}
+                onSuccess={() => { setSearchInitialQuery(''); fetchGears() }}
                 onManual={(name) => { setGearInitialName(name); setAddMode('manual') }}
               />
             </div>
@@ -287,7 +328,7 @@ export default function Home() {
       {/* ── FAB (mobile only, Gear tab) ── */}
       {activeTab === 'gear' && (
         <button
-          onClick={() => { setAddMode((p) => (p ? null : 'search')); setGearInitialName('') }}
+          onClick={() => { setAddMode((p) => (p ? null : 'search')); setGearInitialName(''); setSearchInitialQuery('') }}
           className="sm:hidden fixed bottom-6 right-6 z-40 w-14 h-14 bg-ink text-surface rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95"
         >
           {addMode

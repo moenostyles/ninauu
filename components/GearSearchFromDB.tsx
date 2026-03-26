@@ -18,37 +18,46 @@ interface GearSeedItem {
 interface Props {
   onSuccess: () => void
   onManual: (name: string) => void
+  initialQuery?: string
 }
 
-// ── client-side fuzzy search ──────────────────────────────────────────
+// ── client-side AND search ────────────────────────────────────────────
+// 全トークンが brand または name に含まれる候補のみ返す
 function searchGear(query: string, items: GearSeedItem[]): GearSeedItem[] {
   const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean)
   if (tokens.length === 0) return []
 
-  const scored = items
-    .map((item) => {
-      const brandL = item.brand.toLowerCase()
-      const nameL  = item.name.toLowerCase()
-      const catL   = (item.subcategory || item.category).toLowerCase()
+  const results: { item: GearSeedItem; score: number }[] = []
 
-      let score = 0
-      for (const t of tokens) {
-        if (brandL.includes(t)) score += 2
-        if (nameL.includes(t))  score += 2
-        if (catL.includes(t))   score += 1
-      }
-      return { item, score }
-    })
-    .filter(({ score }) => score > 0)
+  for (const item of items) {
+    const brandL = item.brand.toLowerCase()
+    const nameL  = item.name.toLowerCase()
+    const catL   = (item.subcategory || item.category).toLowerCase()
 
-  return scored
+    // AND条件：すべてのトークンが brand か name か category のいずれかにマッチすること
+    const allMatch = tokens.every(
+      (t) => brandL.includes(t) || nameL.includes(t) || catL.includes(t)
+    )
+    if (!allMatch) continue
+
+    // 関連度スコア（name一致を優先）
+    let score = 0
+    for (const t of tokens) {
+      if (nameL.includes(t))  score += 2
+      if (brandL.includes(t)) score += 1
+      if (catL.includes(t))   score += 0.5
+    }
+    results.push({ item, score })
+  }
+
+  return results
     .sort((a, b) => b.score - a.score)
     .slice(0, 10)
     .map(({ item }) => item)
 }
 
-export default function GearSearchFromDB({ onSuccess, onManual }: Props) {
-  const [query, setQuery] = useState('')
+export default function GearSearchFromDB({ onSuccess, onManual, initialQuery = '' }: Props) {
+  const [query, setQuery] = useState(initialQuery)
   const [results, setResults] = useState<GearSeedItem[]>([])
   const [seedData, setSeedData] = useState<GearSeedItem[]>([])
   const [added, setAdded] = useState<Set<string>>(new Set())
