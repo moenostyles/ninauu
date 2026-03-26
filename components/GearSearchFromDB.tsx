@@ -21,37 +21,54 @@ interface Props {
   initialQuery?: string
 }
 
-// ── client-side AND search ────────────────────────────────────────────
-// 全トークンが brand または name に含まれる候補のみ返す
+// ── client-side search ───────────────────────────────────────────────
+// 優先度: ブランド完全一致 > ブランド前方一致 > ブランド部分一致 > 名前一致
+// AND検索を試み、0件の場合は最多マッチ数のアイテムにフォールバック
+function scoreItem(tokens: string[], brandL: string, nameL: string, catL: string): number {
+  const fullQuery = tokens.join(' ')
+  let score = 0
+
+  // ブランド一致ボーナス（クエリ全体がブランドに一致）
+  if (brandL === fullQuery)        score += 20  // 完全一致
+  else if (brandL.startsWith(fullQuery)) score += 10  // 前方一致
+
+  for (const t of tokens) {
+    if (brandL === t)              score += 8   // トークンがブランドに完全一致
+    else if (brandL.startsWith(t)) score += 4   // ブランド前方一致
+    else if (brandL.includes(t))   score += 1   // ブランド部分一致
+    if (nameL.includes(t))         score += 2   // 名前一致
+    if (catL.includes(t))          score += 0.5 // カテゴリ一致
+  }
+  return score
+}
+
 function searchGear(query: string, items: GearSeedItem[]): GearSeedItem[] {
   const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean)
   if (tokens.length === 0) return []
 
-  const results: { item: GearSeedItem; score: number }[] = []
+  const scored: { item: GearSeedItem; score: number; matchCount: number }[] = []
 
   for (const item of items) {
     const brandL = item.brand.toLowerCase()
     const nameL  = item.name.toLowerCase()
     const catL   = (item.subcategory || item.category).toLowerCase()
 
-    // AND条件：すべてのトークンが brand か name か category のいずれかにマッチすること
-    const allMatch = tokens.every(
+    const matchCount = tokens.filter(
       (t) => brandL.includes(t) || nameL.includes(t) || catL.includes(t)
-    )
-    if (!allMatch) continue
+    ).length
 
-    // 関連度スコア（name一致を優先）
-    let score = 0
-    for (const t of tokens) {
-      if (nameL.includes(t))  score += 2
-      if (brandL.includes(t)) score += 1
-      if (catL.includes(t))   score += 0.5
-    }
-    results.push({ item, score })
+    if (matchCount === 0) continue
+
+    const score = scoreItem(tokens, brandL, nameL, catL)
+    scored.push({ item, score, matchCount })
   }
 
-  return results
-    .sort((a, b) => b.score - a.score)
+  // まず全トークンマッチ（AND）を試みる
+  const andResults = scored.filter((r) => r.matchCount === tokens.length)
+  const pool = andResults.length > 0 ? andResults : scored  // 0件なら全マッチにフォールバック
+
+  return pool
+    .sort((a, b) => b.score - a.score || b.matchCount - a.matchCount)
     .slice(0, 10)
     .map(({ item }) => item)
 }
