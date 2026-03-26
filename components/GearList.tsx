@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { X, Pencil, ChevronDown } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Pencil, ChevronDown, MoreHorizontal } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Gear, PackEntry, parentOf, PARENT_CATEGORIES } from '@/types'
 import EditGearModal from '@/components/EditGearModal'
 import { useWeightUnit } from '@/lib/weight-unit-context'
+import { PARENT_COLOR } from '@/lib/category-colors'
 
 interface Props {
   gears: Gear[]
@@ -15,32 +16,25 @@ interface Props {
   onDelete: () => void
 }
 
-// ── カテゴリ別左ボーダーアクセントカラー ──────────────────────────────
-const ACCENT_BG: Record<string, string> = {
-  'Tent & Tarp':         'bg-blue-400',
-  'Backpack':            'bg-emerald-400',
-  'Sleep':               'bg-violet-400',
-  'Tops':                'bg-orange-400',
-  'Bottoms':             'bg-amber-400',
-  'Apparel Accessories': 'bg-yellow-400',
-  'Cookware':            'bg-rose-400',
-  'Field Gear':          'bg-cyan-400',
-  'Others':              'bg-gray-400',
-}
-function accentBg(category: string): string {
-  return ACCENT_BG[parentOf(category)] ?? 'bg-gray-300'
-}
-
 export default function GearList({ gears, packItems, onTogglePack, onUpdateQuantity, onDelete }: Props) {
   const [editingGear, setEditingGear] = useState<Gear | null>(null)
   const [collapsed,   setCollapsed]   = useState<Set<string>>(new Set())
   const [showHint,    setShowHint]    = useState(false)
+  const [openMenuId,  setOpenMenuId]  = useState<string | null>(null)
   const { fmt } = useWeightUnit()
 
   useEffect(() => {
     const dismissed = localStorage.getItem('ninauu_pack_hint_dismissed')
     if (!dismissed) setShowHint(true)
   }, [])
+
+  // "..." メニュー：外クリックで閉じる
+  useEffect(() => {
+    if (!openMenuId) return
+    const close = () => setOpenMenuId(null)
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [openMenuId])
 
   const dismissHint = () => {
     localStorage.setItem('ninauu_pack_hint_dismissed', '1')
@@ -75,26 +69,46 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     .filter(g => g.items.length > 0)
 
   const renderGearCard = (gear: Gear) => {
-    const entry  = packItems.find((e) => e.gear.id === gear.id)
-    const inPack = !!entry
+    const entry      = packItems.find((e) => e.gear.id === gear.id)
+    const inPack     = !!entry
+    const isMenuOpen = openMenuId === gear.id
+    const accentColor = PARENT_COLOR[parentOf(gear.category)] ?? '#9CA3AF'
 
-    // ── アクションボタン ──
-    const actionBtns = (
-      <div className="flex items-center shrink-0">
+    // ── "..." アクションメニュー ──────────────────────────────────
+    const moreMenu = (
+      <div
+        className="relative shrink-0"
+        onClick={e => e.stopPropagation()}  // 外クリック閉じと干渉しないように
+      >
         <button
-          onClick={() => setEditingGear(gear)}
-          className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-[#D1D5DB] hover:text-ink transition-colors"
-          aria-label="Edit gear"
-        ><Pencil size={12} strokeWidth={2} /></button>
-        <button
-          onClick={() => handleDelete(gear.id)}
-          className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-[#D1D5DB] hover:text-red-400 transition-colors"
-          aria-label="Delete gear"
-        ><X size={13} strokeWidth={2} /></button>
+          onClick={() => setOpenMenuId(isMenuOpen ? null : gear.id)}
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-[#D1D5DB] hover:text-ink hover:bg-fill-2 transition-colors"
+          aria-label="More options"
+        >
+          <MoreHorizontal size={14} strokeWidth={2} />
+        </button>
+        {isMenuOpen && (
+          <div className="absolute right-0 top-full mt-0.5 z-10 bg-white border border-line rounded-xl shadow-lg overflow-hidden w-28 py-0.5">
+            <button
+              onClick={() => { setEditingGear(gear); setOpenMenuId(null) }}
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-ink hover:bg-fill transition-colors"
+            >
+              <Pencil size={12} strokeWidth={2} className="text-ink-3 shrink-0" />
+              Edit
+            </button>
+            <button
+              onClick={() => { handleDelete(gear.id); setOpenMenuId(null) }}
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <X size={12} strokeWidth={2} className="shrink-0" />
+              Delete
+            </button>
+          </div>
+        )}
       </div>
     )
 
-    // ── 数量ステッパー ──
+    // ── 数量ステッパー ──────────────────────────────────────────
     const stepper = inPack ? (
       <div className="flex items-center gap-1 shrink-0">
         <button onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity - 1) }}
@@ -107,14 +121,16 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
       </div>
     ) : null
 
-    // ── 重量 ── tabular-nums で数字幅を揃える
+    // ── 重量（固定幅70px / tabular-nums）──────────────────────
     const weight = (
-      <div className="text-right shrink-0 min-w-[40px]">
+      <div className="text-right shrink-0" style={{ width: '64px', minWidth: '64px' }}>
         <span className="text-sm font-semibold nums tabular-nums" style={{ color: '#333' }}>
           {inPack && entry.quantity > 1 ? fmt(gear.weight_g * entry.quantity) : fmt(gear.weight_g)}
         </span>
         {inPack && entry.quantity > 1 && (
-          <p className="text-[10px] text-ink-3 nums leading-tight">{fmt(gear.weight_g)}×{entry.quantity}</p>
+          <p className="text-[10px] text-ink-3 nums tabular-nums leading-tight">
+            {fmt(gear.weight_g)}×{entry.quantity}
+          </p>
         )}
       </div>
     )
@@ -128,11 +144,12 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
       >
         {/* カテゴリ別左ボーダーアクセント（チェック済みのみ） */}
         {inPack && (
-          <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentBg(gear.category)}`} />
+          <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: accentColor }} />
         )}
 
-        {/* ── 行1: チェックボックス + 品名 + 重量 + アクション ── */}
+        {/* ── 行1: チェック + 品名 + 重量 + "…" ── */}
         <div className="flex items-center gap-2 pl-1">
+
           {/* チェックボックス */}
           <button
             onClick={() => onTogglePack(gear)}
@@ -142,11 +159,8 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             }`}
           >
             {inPack && (
-              <svg
-                className="w-2.5 h-2.5 animate-scale-in"
-                fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" strokeWidth={3}
-              >
+              <svg className="w-2.5 h-2.5 animate-scale-in" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             )}
@@ -154,11 +168,9 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
           {/* 品名エリア */}
           <div className="flex-1 min-w-0">
-            {/* 品名: font-size 15px / font-weight 500 */}
-            <p
-              className="font-medium truncate leading-snug"
-              style={{ fontSize: '15px', color: '#1A1A1A' }}
-            >{gear.name}</p>
+            <p className="font-medium truncate leading-snug" style={{ fontSize: '15px', color: '#1A1A1A' }}>
+              {gear.name}
+            </p>
             {/* デスクトップ: ブランド・カテゴリ */}
             <div className="hidden sm:flex items-center gap-1 mt-0.5">
               {gear.brand && <span className="truncate" style={{ fontSize: '13px', color: '#999' }}>{gear.brand}</span>}
@@ -169,10 +181,12 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
           {/* デスクトップ: ステッパー */}
           {inPack && <div className="hidden sm:flex">{stepper}</div>}
-          {/* 重量（常時） */}
+
+          {/* 重量（固定幅・常時表示） */}
           {weight}
-          {/* アクション（常時） */}
-          {actionBtns}
+
+          {/* "…" メニュー */}
+          {moreMenu}
         </div>
 
         {/* ── 行2（モバイルのみ）: ブランド · カテゴリ + ステッパー ── */}
@@ -200,7 +214,6 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         </div>
       )}
 
-      {/* カテゴリアコーディオン */}
       <div>
         {grouped.length === 1 ? (
           <div className="space-y-1">{grouped[0].items.map(renderGearCard)}</div>
@@ -209,21 +222,21 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             const isCollapsed  = collapsed.has(parent)
             const totalWeight  = items.reduce((s, g) => s + g.weight_g, 0)
             const checkedCount = items.filter(g => packItems.some(e => e.gear.id === g.id)).length
+            const headerColor  = PARENT_COLOR[parent] ?? '#888'
 
             return (
               <div key={parent} className="mb-0.5">
-                {/* ── アコーディオンヘッダー ── */}
                 <button
                   onClick={() => toggleCollapse(parent)}
                   aria-expanded={!isCollapsed}
-                  className="w-full flex items-center justify-between py-1.5 px-1 group"
+                  className="w-full flex items-center justify-between py-1.5 px-1"
                 >
                   <div className="flex items-center gap-2">
-                    {/* カテゴリ名: 11px / bold / gray / wide tracking */}
-                    <span
-                      className="font-bold uppercase"
-                      style={{ fontSize: '11px', color: '#888', letterSpacing: '0.05em' }}
-                    >{parent}</span>
+                    {/* カテゴリカラードット */}
+                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: headerColor }} />
+                    <span className="font-bold uppercase" style={{ fontSize: '11px', color: '#888', letterSpacing: '0.05em' }}>
+                      {parent}
+                    </span>
                     <span className="text-[10px] text-ink-3 bg-fill-2 rounded-full px-1.5 py-0.5 nums">{items.length}</span>
                     {checkedCount > 0 && (
                       <span className="text-[10px] text-surface bg-ink rounded-full px-1.5 py-0.5 nums">✓ {checkedCount}</span>
@@ -232,15 +245,12 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-ink-3 nums tabular-nums">{fmt(totalWeight)}</span>
                     <ChevronDown
-                      size={12}
-                      strokeWidth={2.5}
-                      aria-hidden
+                      size={12} strokeWidth={2.5} aria-hidden
                       className={`text-ink-3 transition-transform duration-150 ${isCollapsed ? '' : 'rotate-180'}`}
                     />
                   </div>
                 </button>
 
-                {/* ギアリスト */}
                 <div className={`overflow-hidden transition-all duration-200 ease-in-out ${
                   isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[9999px] opacity-100'
                 }`}>
