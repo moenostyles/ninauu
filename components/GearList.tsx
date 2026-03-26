@@ -94,105 +94,103 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
   const renderGearCard = (gear: Gear) => {
     const entry = packItems.find((e) => e.gear.id === gear.id)
     const inPack = !!entry
+    const catalogSt = catalogStatus[gear.id] ?? 'idle'
+
+    const actionBtns = (
+      <div className="flex items-center shrink-0">
+        <button
+          onClick={() => setEditingGear(gear)}
+          className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#D1D5DB] hover:text-ink transition-colors"
+          aria-label="Edit gear"
+        ><Pencil size={13} strokeWidth={2} /></button>
+        <button
+          onClick={() => handleDelete(gear.id)}
+          className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#D1D5DB] hover:text-red-400 transition-colors"
+          aria-label="Delete gear"
+        ><X size={14} strokeWidth={2} /></button>
+        <button
+          onClick={() => handleAddToCatalog(gear)}
+          disabled={catalogSt === 'loading' || catalogSt === 'added' || catalogSt === 'exists'}
+          aria-label="Add to catalog"
+          title={catalogSt === 'added' ? 'Added to catalog!' : catalogSt === 'exists' ? 'Already in catalog' : 'Add to catalog'}
+          className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
+            catalogSt === 'added' ? 'text-green-500' : catalogSt === 'exists' ? 'text-ink-3' : 'text-[#D1D5DB] hover:text-ink'
+          }`}
+        >{catalogSt === 'added' ? <Check size={13} strokeWidth={2.5} /> : <BookPlus size={13} strokeWidth={2} />}</button>
+      </div>
+    )
+
+    const stepper = inPack ? (
+      <div className="flex items-center gap-1 shrink-0">
+        <button onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity - 1) }}
+          className="w-5 h-5 rounded-full bg-fill-2 text-ink-2 text-xs font-bold flex items-center justify-center hover:bg-line transition-colors"
+        >−</button>
+        <span className="w-4 text-center text-xs font-semibold text-ink nums">{entry.quantity}</span>
+        <button onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity + 1) }}
+          className="w-5 h-5 rounded-full bg-fill-2 text-ink-2 text-xs font-bold flex items-center justify-center hover:bg-line transition-colors"
+        >+</button>
+      </div>
+    ) : null
+
+    const weight = (
+      <div className="text-right shrink-0">
+        <span className="text-sm font-semibold text-ink nums">
+          {inPack && entry.quantity > 1 ? fmt(gear.weight_g * entry.quantity) : fmt(gear.weight_g)}
+        </span>
+        {inPack && entry.quantity > 1 && (
+          <p className="text-[10px] text-ink-3 nums leading-tight">{fmt(gear.weight_g)}×{entry.quantity}</p>
+        )}
+      </div>
+    )
+
     return (
       <div
         key={gear.id}
-        className={`bg-surface rounded-2xl border px-4 py-3 flex items-center gap-3 transition-colors ${
+        className={`bg-surface rounded-2xl border px-4 py-3 transition-colors ${
           inPack ? 'border-ink bg-fill' : 'border-line hover:border-ink-3'
         }`}
       >
-        {/* Pack toggle */}
-        <button
-          onClick={() => onTogglePack(gear)}
-          aria-label={inPack ? 'Remove from pack' : 'Add to pack'}
-          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-            inPack ? 'bg-ink border-ink text-surface' : 'border-line hover:border-ink'
-          }`}
-        >
-          {inPack && (
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          )}
-        </button>
+        {/* ── 1行目：チェックボックス + ギア名（常時フル表示） ── */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => onTogglePack(gear)}
+            aria-label={inPack ? 'Remove from pack' : 'Add to pack'}
+            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+              inPack ? 'bg-ink border-ink text-surface' : 'border-line hover:border-ink'
+            }`}
+          >
+            {inPack && (
+              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-ink truncate leading-snug">{gear.name}</p>
-          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            {gear.brand && <span className="text-xs text-ink-3 truncate">{gear.brand}</span>}
-            {gear.brand && <span className="text-ink-3 text-xs">·</span>}
-            <span className="text-xs text-ink-3">{gear.category}</span>
+          {/* Info — flex-1 で名前エリアが残り幅をすべて確保 */}
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-ink truncate leading-snug">{gear.name}</p>
+            <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+              {gear.brand && <span className="text-xs text-ink-3 truncate">{gear.brand}</span>}
+              {gear.brand && <span className="text-ink-3 text-xs shrink-0">·</span>}
+              <span className="text-xs text-ink-3 shrink-0">{gear.category}</span>
+            </div>
           </div>
+
+          {/* sm以上：ステッパー・重量・アクションを1行に並べる */}
+          {inPack && <div className="hidden sm:flex">{stepper}</div>}
+          <div className="hidden sm:block w-14">{weight}</div>
+          <div className="hidden sm:flex">{actionBtns}</div>
         </div>
 
-        {/* Quantity stepper (in-pack only) */}
-        {inPack && (
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity - 1) }}
-              className="w-5 h-5 rounded-full bg-fill-2 text-ink-2 text-xs font-bold flex items-center justify-center hover:bg-line transition-colors"
-            >−</button>
-            <span className="w-4 text-center text-xs font-semibold text-ink nums">{entry.quantity}</span>
-            <button
-              onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity + 1) }}
-              className="w-5 h-5 rounded-full bg-fill-2 text-ink-2 text-xs font-bold flex items-center justify-center hover:bg-line transition-colors"
-            >+</button>
+        {/* ── 2行目：モバイル（sm未満）のみ表示 ── */}
+        {/* チェック済み → ステッパー + 重量 + アクション */}
+        {/* 未チェック  → 重量 + アクション */}
+        <div className="flex sm:hidden items-center justify-between mt-2 pl-8">
+          <div className="flex items-center gap-2">
+            {stepper}
+            {weight}
           </div>
-        )}
-
-        {/* Weight */}
-        <div className="text-right shrink-0 w-14">
-          <span className="text-sm font-semibold text-ink nums">
-            {inPack && entry.quantity > 1 ? fmt(gear.weight_g * entry.quantity) : fmt(gear.weight_g)}
-          </span>
-          {inPack && entry.quantity > 1 && (
-            <p className="text-[10px] text-ink-3 nums">{fmt(gear.weight_g)} × {entry.quantity}</p>
-          )}
-        </div>
-
-        {/* Edit / Delete / Catalog */}
-        <div className="flex items-center shrink-0">
-          <button
-            onClick={() => setEditingGear(gear)}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#D1D5DB] hover:text-ink transition-colors"
-            aria-label="Edit gear"
-          >
-            <Pencil size={13} strokeWidth={2} />
-          </button>
-          <button
-            onClick={() => handleDelete(gear.id)}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#D1D5DB] hover:text-red-400 transition-colors"
-            aria-label="Delete gear"
-          >
-            <X size={14} strokeWidth={2} />
-          </button>
-          {/* Add to catalog */}
-          {(() => {
-            const status = catalogStatus[gear.id] ?? 'idle'
-            return (
-              <button
-                onClick={() => handleAddToCatalog(gear)}
-                disabled={status === 'loading' || status === 'added' || status === 'exists'}
-                aria-label="Add to catalog"
-                title={
-                  status === 'added' ? 'Added to catalog!'
-                  : status === 'exists' ? 'Already in catalog'
-                  : 'Add to catalog'
-                }
-                className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
-                  status === 'added'  ? 'text-green-500' :
-                  status === 'exists' ? 'text-ink-3' :
-                  'text-[#D1D5DB] hover:text-ink'
-                }`}
-              >
-                {status === 'added'
-                  ? <Check size={13} strokeWidth={2.5} />
-                  : <BookPlus size={13} strokeWidth={2} />
-                }
-              </button>
-            )
-          })()}
+          {actionBtns}
         </div>
       </div>
     )
