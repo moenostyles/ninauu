@@ -533,7 +533,7 @@ export default function ProfilePage() {
 
       {trips.length === 0 && packs.length === 0 && (
         <div className="text-center py-14">
-          <div className="text-4xl mb-3">🏕️</div>
+          <div className="text-4xl mb-3">🏔️</div>
           <p className="text-sm font-medium text-ink-2">Browse packing lists from other hikers</p>
           <p className="text-xs text-ink-3 mt-1">Public packs and trips will appear here</p>
         </div>
