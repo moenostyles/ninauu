@@ -302,18 +302,18 @@ export default function ProfilePage() {
         <ArrowLeft size={16} strokeWidth={2} /> Back
       </button>
 
-      <div className="bg-white border border-line rounded-2xl px-5 py-5">
+      <div className="bg-white border border-line rounded-2xl px-5 py-5 space-y-4">
 
-        {/* ── 上段: アバター + ユーザー名 + Follow + ... ── */}
+        {/* ── アバター + テキスト情報 ── */}
         <div className="flex items-center gap-4">
 
           {/* アバター */}
           <div className="relative shrink-0">
-            <div className="w-14 h-14 rounded-full overflow-hidden bg-fill-2 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-fill-2 flex items-center justify-center">
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-xl font-bold text-ink-2">{initial}</span>
+                <span className="text-2xl font-bold text-ink-2">{initial}</span>
               )}
             </div>
             {isOwn && (
@@ -331,7 +331,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* 名前エリア */}
+          {/* 名前 + stats（ボタン類は含めない） */}
           <div className="flex-1 min-w-0">
             {editingProfile ? (
               <div className="space-y-2">
@@ -350,92 +350,93 @@ export default function ProfilePage() {
                   className="w-full border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink"
                 />
                 <div className="flex gap-2">
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={savingProfile}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-ink text-surface text-xs rounded-lg disabled:opacity-40"
-                  >
+                  <button onClick={handleSaveProfile} disabled={savingProfile}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-ink text-surface text-xs rounded-lg disabled:opacity-40">
                     <Check size={12} strokeWidth={2.5} /> Save
                   </button>
-                  <button
-                    onClick={() => setEditingProfile(false)}
-                    className="flex items-center gap-1 px-3 py-1.5 border border-line text-ink-3 text-xs rounded-lg"
-                  >
+                  <button onClick={() => setEditingProfile(false)}
+                    className="flex items-center gap-1 px-3 py-1.5 border border-line text-ink-3 text-xs rounded-lg">
                     <X size={12} strokeWidth={2.5} /> Cancel
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <p className="font-semibold text-ink">{profile.display_name ?? profile.username ?? 'Anonymous'}</p>
-                {profile.username && <p className="text-xs text-ink-3">@{profile.username}</p>}
-                {isOwn && (
-                  <button
-                    onClick={() => { setEditDisplayName(profile.display_name ?? ''); setEditUsername(profile.username ?? ''); setEditingProfile(true) }}
-                    className="text-line hover:text-ink transition-colors p-0.5"
-                  >
-                    <Pencil size={12} strokeWidth={2} />
-                  </button>
+              <>
+                {/* 表示名 */}
+                <div className="flex items-center gap-1.5">
+                  <p className="font-semibold text-base text-ink leading-tight truncate">
+                    {profile.display_name ?? profile.username ?? 'Anonymous'}
+                  </p>
+                  {isOwn && (
+                    <button
+                      onClick={() => { setEditDisplayName(profile.display_name ?? ''); setEditUsername(profile.username ?? ''); setEditingProfile(true) }}
+                      className="shrink-0 text-line hover:text-ink transition-colors p-0.5"
+                    >
+                      <Pencil size={12} strokeWidth={2} />
+                    </button>
+                  )}
+                </div>
+                {/* @username */}
+                {profile.username && (
+                  <p className="text-xs text-ink-3 mt-0.5">@{profile.username}</p>
                 )}
-              </div>
+                {/* followers / following */}
+                <div className="flex gap-4 mt-2 text-xs text-ink-3">
+                  <button onClick={() => setShowFollowers(true)} className="hover:text-ink transition-colors">
+                    <strong className="text-ink">{followerCount}</strong> followers
+                  </button>
+                  <button onClick={() => setShowFollowing(true)} className="hover:text-ink transition-colors">
+                    <strong className="text-ink">{followingCount}</strong> following
+                  </button>
+                </div>
+              </>
             )}
           </div>
-
-          {/* Follow ボタン + ... メニュー（他ユーザーのみ） */}
-          {!isOwn && user && !editingProfile && (
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={handleFollow}
-                disabled={followLoading}
-                className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors disabled:opacity-40 ${
-                  isFollowing
-                    ? 'border border-line text-ink-3 hover:bg-fill'
-                    : 'bg-ink text-surface hover:bg-ink-2'
-                }`}
-              >
-                {isFollowing ? 'Following' : 'Follow'}
-              </button>
-
-              {/* ... メニュー */}
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => setShowMenu((p) => !p)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-3 hover:text-ink hover:bg-fill transition-colors"
-                  aria-label="More options"
-                >
-                  <MoreHorizontal size={18} strokeWidth={2} />
-                </button>
-                {showMenu && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-line rounded-xl shadow-lg z-20 min-w-[130px] py-1 overflow-hidden">
-                    <button
-                      onClick={() => { handleBlock(); setShowMenu(false) }}
-                      disabled={blockLoading}
-                      className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
-                    >
-                      {isBlocked ? 'Unblock' : 'Block'}
-                    </button>
-                    <button
-                      onClick={() => setShowMenu(false)}
-                      className="w-full text-left px-4 py-2.5 text-sm text-ink-3 hover:bg-fill transition-colors"
-                    >
-                      Report
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* ── 下段: followers · following カウント ── */}
-        {!editingProfile && (
-          <div className="flex gap-4 mt-3 text-xs text-ink-3">
-            <button onClick={() => setShowFollowers(true)} className="hover:text-ink transition-colors">
-              <strong className="text-ink">{followerCount}</strong> followers
+        {/* ── Follow / ... ボタン行（他ユーザー閲覧時のみ） ── */}
+        {!isOwn && user && !editingProfile && (
+          <div className="flex gap-2">
+            {/* Follow — flex-1 で横幅を最大に */}
+            <button
+              onClick={handleFollow}
+              disabled={followLoading}
+              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-colors disabled:opacity-40 ${
+                isFollowing
+                  ? 'border border-line text-ink-3 hover:bg-fill'
+                  : 'bg-ink text-surface hover:bg-ink-2'
+              }`}
+            >
+              {isFollowing ? 'Following' : 'Follow'}
             </button>
-            <button onClick={() => setShowFollowing(true)} className="hover:text-ink transition-colors">
-              <strong className="text-ink">{followingCount}</strong> following
-            </button>
+
+            {/* ... メニュー */}
+            <div className="relative shrink-0" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu((p) => !p)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl border border-line text-ink-3 hover:text-ink hover:bg-fill transition-colors"
+                aria-label="More options"
+              >
+                <MoreHorizontal size={18} strokeWidth={2} />
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-white border border-line rounded-xl shadow-lg z-20 min-w-[130px] py-1 overflow-hidden">
+                  <button
+                    onClick={() => { handleBlock(); setShowMenu(false) }}
+                    disabled={blockLoading}
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
+                  >
+                    {isBlocked ? 'Unblock' : 'Block'}
+                  </button>
+                  <button
+                    onClick={() => setShowMenu(false)}
+                    className="w-full text-left px-4 py-2.5 text-sm text-ink-3 hover:bg-fill transition-colors"
+                  >
+                    Report
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -532,18 +533,12 @@ export default function ProfilePage() {
 
       {trips.length === 0 && packs.length === 0 && (
         <div className="text-center py-14">
-          {/* 山のイラスト */}
-          <svg viewBox="0 0 96 72" className="w-24 h-18 mx-auto mb-4 text-line" fill="currentColor" aria-hidden>
+          <svg viewBox="0 0 96 72" className="w-24 mx-auto mb-4 text-line" fill="currentColor" aria-hidden>
             <polygon points="48,6 84,66 12,66" />
             <polygon points="72,24 96,66 48,66" opacity="0.45" />
             <circle cx="22" cy="20" r="7" opacity="0.3" />
           </svg>
-          <p className="text-ink-3 text-sm">
-            {profile.username
-              ? <><span className="font-medium text-ink-2">@{profile.username}</span> hasn't shared any packs yet.</>
-              : <>{profile.display_name ?? 'This user'} hasn't shared any packs yet.</>
-            }
-          </p>
+          <p className="text-sm text-ink-3">No public packs or trips yet.</p>
         </div>
       )}
 
