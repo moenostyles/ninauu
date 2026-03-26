@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { Profile, Trip, SavedPack, TripItem } from '@/types'
-import { Globe, Users, Lock, ChevronDown, Pencil, Check, X, ArrowLeft, Camera } from 'lucide-react'
+import { Globe, Users, Lock, ChevronDown, Pencil, Check, X, ArrowLeft, Camera, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 
 interface FollowUser {
@@ -122,6 +122,8 @@ export default function ProfilePage() {
 
   const [isBlocked, setIsBlocked] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const [myFollowingIds, setMyFollowingIds] = useState<Set<string>>(new Set())
 
@@ -186,6 +188,16 @@ export default function ProfilePage() {
   }, [userId, user, isOwn])
 
   useEffect(() => { loadProfile() }, [loadProfile])
+
+  // ... メニュー外クリックで閉じる
+  useEffect(() => {
+    if (!showMenu) return
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showMenu])
 
   const handleFollow = async () => {
     if (!user) return
@@ -291,8 +303,11 @@ export default function ProfilePage() {
       </button>
 
       <div className="bg-white border border-line rounded-2xl px-5 py-5">
-        <div className="flex items-start gap-4">
 
+        {/* ── 上段: アバター + ユーザー名 + Follow + ... ── */}
+        <div className="flex items-center gap-4">
+
+          {/* アバター */}
           <div className="relative shrink-0">
             <div className="w-14 h-14 rounded-full overflow-hidden bg-fill-2 flex items-center justify-center">
               {profile.avatar_url ? (
@@ -309,23 +324,14 @@ export default function ProfilePage() {
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-ink text-surface flex items-center justify-center hover:bg-ink-2 transition-colors disabled:opacity-40"
                   title="Change photo"
                 >
-                  {uploadingAvatar ? (
-                    <span className="text-[8px]">…</span>
-                  ) : (
-                    <Camera size={11} strokeWidth={2} />
-                  )}
+                  {uploadingAvatar ? <span className="text-[8px]">…</span> : <Camera size={11} strokeWidth={2} />}
                 </button>
-                <input
-                  ref={avatarInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarChange}
-                />
+                <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
               </>
             )}
           </div>
 
+          {/* 名前エリア */}
           <div className="flex-1 min-w-0">
             {editingProfile ? (
               <div className="space-y-2">
@@ -360,37 +366,24 @@ export default function ProfilePage() {
                 </div>
               </div>
             ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-ink">{profile.display_name ?? profile.username ?? 'Anonymous'}</p>
-                  {profile.username && <p className="text-xs text-ink-3">@{profile.username}</p>}
-                  {isOwn && (
-                    <button
-                      onClick={() => {
-                        setEditDisplayName(profile.display_name ?? '')
-                        setEditUsername(profile.username ?? '')
-                        setEditingProfile(true)
-                      }}
-                      className="text-line hover:text-ink transition-colors p-0.5"
-                    >
-                      <Pencil size={12} strokeWidth={2} />
-                    </button>
-                  )}
-                </div>
-                <div className="flex gap-4 mt-1 text-xs text-ink-3">
-                  <button onClick={() => setShowFollowers(true)} className="hover:text-ink transition-colors">
-                    <strong className="text-ink">{followerCount}</strong> followers
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="font-semibold text-ink">{profile.display_name ?? profile.username ?? 'Anonymous'}</p>
+                {profile.username && <p className="text-xs text-ink-3">@{profile.username}</p>}
+                {isOwn && (
+                  <button
+                    onClick={() => { setEditDisplayName(profile.display_name ?? ''); setEditUsername(profile.username ?? ''); setEditingProfile(true) }}
+                    className="text-line hover:text-ink transition-colors p-0.5"
+                  >
+                    <Pencil size={12} strokeWidth={2} />
                   </button>
-                  <button onClick={() => setShowFollowing(true)} className="hover:text-ink transition-colors">
-                    <strong className="text-ink">{followingCount}</strong> following
-                  </button>
-                </div>
-              </>
+                )}
+              </div>
             )}
           </div>
 
+          {/* Follow ボタン + ... メニュー（他ユーザーのみ） */}
           {!isOwn && user && !editingProfile && (
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={handleFollow}
                 disabled={followLoading}
@@ -402,16 +395,49 @@ export default function ProfilePage() {
               >
                 {isFollowing ? 'Following' : 'Follow'}
               </button>
-              <button
-                onClick={handleBlock}
-                disabled={blockLoading}
-                className="text-xs text-red-400 hover:text-red-500 transition-colors disabled:opacity-40"
-              >
-                {isBlocked ? 'Unblock' : 'Block'}
-              </button>
+
+              {/* ... メニュー */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setShowMenu((p) => !p)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-3 hover:text-ink hover:bg-fill transition-colors"
+                  aria-label="More options"
+                >
+                  <MoreHorizontal size={18} strokeWidth={2} />
+                </button>
+                {showMenu && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-line rounded-xl shadow-lg z-20 min-w-[130px] py-1 overflow-hidden">
+                    <button
+                      onClick={() => { handleBlock(); setShowMenu(false) }}
+                      disabled={blockLoading}
+                      className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
+                    >
+                      {isBlocked ? 'Unblock' : 'Block'}
+                    </button>
+                    <button
+                      onClick={() => setShowMenu(false)}
+                      className="w-full text-left px-4 py-2.5 text-sm text-ink-3 hover:bg-fill transition-colors"
+                    >
+                      Report
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
+
+        {/* ── 下段: followers · following カウント ── */}
+        {!editingProfile && (
+          <div className="flex gap-4 mt-3 text-xs text-ink-3">
+            <button onClick={() => setShowFollowers(true)} className="hover:text-ink transition-colors">
+              <strong className="text-ink">{followerCount}</strong> followers
+            </button>
+            <button onClick={() => setShowFollowing(true)} className="hover:text-ink transition-colors">
+              <strong className="text-ink">{followingCount}</strong> following
+            </button>
+          </div>
+        )}
       </div>
 
       {trips.length > 0 && (
@@ -505,8 +531,19 @@ export default function ProfilePage() {
       )}
 
       {trips.length === 0 && packs.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-ink-3 text-sm">No public content yet.</p>
+        <div className="text-center py-14">
+          {/* 山のイラスト */}
+          <svg viewBox="0 0 96 72" className="w-24 h-18 mx-auto mb-4 text-line" fill="currentColor" aria-hidden>
+            <polygon points="48,6 84,66 12,66" />
+            <polygon points="72,24 96,66 48,66" opacity="0.45" />
+            <circle cx="22" cy="20" r="7" opacity="0.3" />
+          </svg>
+          <p className="text-ink-3 text-sm">
+            {profile.username
+              ? <><span className="font-medium text-ink-2">@{profile.username}</span> hasn't shared any packs yet.</>
+              : <>{profile.display_name ?? 'This user'} hasn't shared any packs yet.</>
+            }
+          </p>
         </div>
       )}
 
