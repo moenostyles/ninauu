@@ -1,14 +1,53 @@
-// ── Category hierarchy (based on Moonlight Gear) ──────────────────────────
+// ── Category hierarchy ──────────────────────────────────────────────────────
+// 注意: 旧サブカテゴリ名も後方互換のため残す（既存ユーザーのDB値が参照するため）
 export const CATEGORY_TREE: Record<string, string[]> = {
-  'Tent & Tarp':         ['Tent', 'Tarp'],
-  'Backpack':            ['Backpack', 'Sacoche & Waist Pouch', 'Pack Accessories'],
-  'Sleep':               ['Sleeping Bag', 'Sleeping Mat', 'Pillow', 'Bivy', 'Hammock', 'Ground Sheet'],
-  'Tops':                ['T-shirt & Shirt', 'Shell Jacket', 'Insulation Jacket'],
-  'Bottoms':             ['Pants & Shorts', 'Shell Pants', 'Insulation Pants'],
-  'Apparel Accessories': ['Footwear', 'Headgear', 'Gloves', 'Socks', 'Eyewear'],
-  'Cookware':            ['Cooker', 'Cutlery', 'Stove & Fuel', 'Table', 'Bottle & Filter', 'Fire Pit'],
-  'Field Gear':          ['Stuff Sack', 'Headlamp', 'GPS & Communication', 'Power Bank', 'Knife & Tool', 'Umbrella', 'Emergency'],
-  'Others':              ['Others'],
+  'Tent & Tarp': [
+    'Tent', 'Tarp',
+    'Groundsheet', 'Ground Sheet',   // seed=Groundsheet、旧=Ground Sheet
+    'Stakes', 'Tent Accessories',
+  ],
+  'Backpack': [
+    'Backpack',
+    'Sacoche', 'Sacoche & Waist Pouch',  // seed=Sacoche、旧=Sacoche & Waist Pouch
+    'Pack Accessories',
+  ],
+  'Sleep': [
+    'Sleeping Bag', 'Sleeping Bag Liner',  // Liner を追加
+    'Sleeping Mat',
+    'Pillow', 'Quilt',                     // Quilt を追加
+    'Bivy',
+    'Hammock',                             // ハンモック泊はSleepに分類
+  ],
+  'Tops': [
+    'T-shirt & Shirt', 'Shell Jacket', 'Insulation Jacket',  // 旧名
+    'Base Layer', 'Down Jacket', 'Fleece',                   // seed名
+    'Insulated Jacket', 'Rain Jacket', 'Wind Shell',          // seed名
+  ],
+  'Bottoms': [
+    'Pants & Shorts', 'Shell Pants', 'Insulation Pants',         // 旧名
+    'Hiking Pants', 'Down Pants', 'Insulated Pants',              // seed名
+    'Rain Pants', 'Wind Pants', 'Shorts',                         // seed名
+  ],
+  'Apparel Accessories': [
+    'Footwear', 'Headgear', 'Gloves', 'Socks', 'Eyewear', 'Gaiters',
+  ],
+  'Cookware': [
+    'Cooker', 'Stove & Fuel', 'Fire Pit',             // 旧名
+    'Stove', 'Stove System', 'Pot', 'Cup',            // seed名
+    'Cutlery', 'Bottle & Filter',
+  ],
+  'Field Gear': [
+    'Headlamp', 'Power Bank',
+    'GPS & Communication', 'GPS', 'Electronics',      // GPS系
+    'Trekking Poles', 'Lantern', 'Solar',              // seed名
+    'Knife & Tool', 'Emergency', 'Watch',
+  ],
+  'Others': [
+    'Others',
+    'Stuff Sack', 'Umbrella', 'Table',
+    'Bear Protection', 'Chair', 'Cot',
+    'First Aid', 'Tool', 'Towel',
+  ],
 }
 
 export const PARENT_CATEGORIES = Object.keys(CATEGORY_TREE) as string[]
