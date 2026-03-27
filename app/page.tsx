@@ -182,40 +182,41 @@ export default function Home() {
 
   return (
     <div>
-      {/* ── Sticky header zone: tabs + gear filters ── */}
-      <div className="sticky top-12 z-30 bg-white -mx-4 px-4 border-b border-[#f0f0f0]">
-        {/* Segmented Tab Control */}
-        <div className="bg-[#F2F2F7] rounded-2xl p-1 flex mt-2 mb-2">
-          {tabs.map(({ key, label, badge }) => (
-            <button
-              key={key}
-              onClick={() => {
-                setActiveTab(key)
-                if (key === 'gear') setAddMode(null)
-                if (key === 'trips') setShowTripForm(false)
-              }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
-                activeTab === key
-                  ? 'bg-ink text-surface shadow-md'
-                  : 'text-ink-3 hover:text-ink'
-              }`}
-            >
-              {label}
-              {badge ? (
-                <span className={`text-xs font-semibold rounded-full w-4 h-4 flex items-center justify-center leading-none ${
-                  activeTab === key ? 'bg-surface text-ink' : 'bg-fill-2 text-ink-3'
-                }`}>
-                  {badge > 9 ? '9+' : badge}
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </div>
+      {/* ── Segmented Tab Control ── */}
+      <div className="bg-[#F2F2F7] rounded-2xl p-1 flex mb-5">
+        {tabs.map(({ key, label, badge }) => (
+          <button
+            key={key}
+            onClick={() => {
+              setActiveTab(key)
+              if (key === 'gear') setAddMode(null)
+              if (key === 'trips') setShowTripForm(false)
+            }}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
+              activeTab === key
+                ? 'bg-ink text-surface shadow-md'
+                : 'text-ink-3 hover:text-ink'
+            }`}
+          >
+            {label}
+            {badge ? (
+              <span className={`text-xs font-semibold rounded-full w-4 h-4 flex items-center justify-center leading-none ${
+                activeTab === key ? 'bg-surface text-ink' : 'bg-fill-2 text-ink-3'
+              }`}>
+                {badge > 9 ? '9+' : badge}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </div>
 
-        {/* Category chips + Sort (Gear tab only) */}
-        {activeTab === 'gear' && (
-          <div className="flex flex-col gap-1.5 pb-2">
+      {/* ── Gear List ── */}
+      {activeTab === 'gear' && (
+        <div>
+          {/* Category chips + Add button */}
+          <div className="flex flex-col gap-2 mb-4">
             <div className="flex items-center gap-3">
+              {/* Parent chips — horizontal scroll */}
               <div className="relative flex-1 overflow-hidden">
                 <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
                   {['All', ...PARENT_CATEGORIES].map((p) => (
@@ -225,14 +226,14 @@ export default function Home() {
                       className={`px-3 py-1 text-xs rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
                         filterParent === p
                           ? 'bg-ink text-surface border-ink shadow-sm'
-                          : 'bg-white text-ink border-[#e0e0e0] hover:border-ink hover:bg-fill'
+                          : 'bg-surface text-ink border-line hover:border-ink hover:bg-fill'
                       }`}
                     >
                       {p === 'Apparel Accessories' ? 'Apparel Acc.' : p}
                     </button>
                   ))}
                 </div>
-                <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-fill to-transparent" />
               </div>
               <button
                 onClick={() => { setAddMode((p) => (p ? null : 'search')); setGearInitialName(''); setSearchInitialQuery('') }}
@@ -241,8 +242,7 @@ export default function Home() {
                 {addMode ? 'Cancel' : <><Plus size={15} strokeWidth={2.5} />Add</>}
               </button>
             </div>
-
-            {/* Child chips */}
+            {/* Child chips — 親より一段下のスタイル */}
             {filterParent !== 'All' && (
               <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5 pl-4">
                 {['All', ...(CATEGORY_TREE[filterParent] ?? [])].map((c) => (
@@ -252,7 +252,7 @@ export default function Home() {
                     className={`px-2.5 py-0.5 text-[11px] rounded-full border transition-colors whitespace-nowrap shrink-0 ${
                       filterChild === c
                         ? 'bg-ink-2 text-surface border-ink-2 font-medium'
-                        : 'bg-white text-ink-3 border-[#e0e0e0] hover:border-ink-3 hover:bg-fill'
+                        : 'bg-surface text-ink-3 border-line hover:border-ink-3 hover:bg-fill'
                     }`}
                   >
                     {c}
@@ -274,7 +274,7 @@ export default function Home() {
                 <div ref={sortMenuRef} className="relative self-start">
                   <button
                     onClick={() => setShowSortMenu(p => !p)}
-                    className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-full border border-[#e0e0e0] bg-white text-ink-3 hover:border-ink hover:bg-fill transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-full border border-line bg-surface text-ink-3 hover:border-ink hover:bg-fill transition-colors whitespace-nowrap"
                   >
                     <span className="text-[10px] uppercase tracking-wider text-ink-3">Sort</span>
                     <span className="font-medium text-ink">{currentLabel}</span>
@@ -283,13 +283,15 @@ export default function Home() {
                     </svg>
                   </button>
                   {showSortMenu && (
-                    <div className="absolute left-0 top-full mt-1 z-40 bg-white border border-line rounded-xl shadow-lg overflow-hidden py-0.5 w-36">
+                    <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-line rounded-xl shadow-lg overflow-hidden py-0.5 w-36">
                       {SORT_OPTIONS.map(({ key, label }) => (
                         <button
                           key={key}
                           onClick={() => { setSortBy(key); setShowSortMenu(false) }}
                           className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                            sortBy === key ? 'font-semibold text-ink bg-fill' : 'text-ink-2 hover:bg-fill'
+                            sortBy === key
+                              ? 'font-semibold text-ink bg-fill'
+                              : 'text-ink-2 hover:bg-fill'
                           }`}
                         >
                           {label}
@@ -301,12 +303,6 @@ export default function Home() {
               )
             })()}
           </div>
-        )}
-      </div>
-
-      {/* ── Gear List ── */}
-      {activeTab === 'gear' && (
-        <div className="pt-3">
 
           {/* Onboarding — Big3未完了かつSkip未実施のユーザーのみ */}
           {/* addMode に依存しない：検索パネルと同時表示してプログレスを常に見せる */}

@@ -105,7 +105,7 @@ export default function NotificationBell({ userId }: Props) {
     <div ref={ref} className="relative">
       <button
         onClick={handleOpen}
-        className="relative text-ink-3 hover:text-ink transition-colors p-1"
+        className="relative text-ink-3 hover:text-surface transition-colors p-1"
         aria-label="Notifications"
       >
         <Bell size={18} strokeWidth={2} />

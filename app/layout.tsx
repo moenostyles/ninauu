@@ -45,11 +45,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-[#fafaf8] min-h-screen">
+      <body className="bg-fill min-h-screen">
         <Providers>
           <SwRegister />
           <Header />
-          <main className="max-w-2xl mx-auto px-4 pt-0 pb-6">{children}</main>
+          <main className="max-w-2xl mx-auto px-4 pt-3 pb-6">{children}</main>
         </Providers>
       </body>
     </html>
