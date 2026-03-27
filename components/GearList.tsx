@@ -175,7 +175,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
           )}
 
           {/* 行1: チェック + 品名 + 重量 + "…" */}
-          <div className="flex items-center gap-1.5 pl-1 group">
+          <div className="flex items-center gap-1.5 pl-1">
 
             {/* チェックボックス */}
             <button
@@ -220,9 +220,9 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
               <MoreHorizontal size={18} strokeWidth={2} />
             </button>
 
-            {/* "…" デスクトップ：hover表示 → fixed dropdown */}
+            {/* "…" デスクトップ：常時表示（薄色）→ hover で濃く */}
             <button
-              className="hidden sm:flex w-8 h-8 items-center justify-center rounded-lg text-[#bbb] hover:text-[#666] opacity-0 group-hover:opacity-100 active:bg-black/5 transition-all shrink-0"
+              className="hidden sm:flex w-8 h-8 items-center justify-center rounded-lg text-[#ccc] hover:text-[#555] hover:bg-black/5 active:bg-black/8 transition-all shrink-0"
               aria-label="More options"
               onClick={(e) => openDesktopMenu(e, gear.id)}
             >
