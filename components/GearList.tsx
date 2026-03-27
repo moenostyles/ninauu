@@ -33,13 +33,6 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     if (!dismissed) setShowHint(true)
   }, [])
 
-  // デスクトップドロップダウン：外クリックで閉じる（mousedownのみ）
-  useEffect(() => {
-    if (!dropdownPos) return
-    const close = () => setDropdownPos(null)
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [dropdownPos])
 
   const dismissHint = () => {
     localStorage.setItem('ninauu_pack_hint_dismissed', '1')
@@ -313,32 +306,37 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         )}
       </div>
 
-      {/* デスクトップドロップダウン（fixed位置 / overflow-hiddenの外） */}
+      {/* デスクトップドロップダウン：外クリック閉じ用オーバーレイ（z-40）+ ドロップダウン本体（z-50） */}
       {dropdownPos && (
-        <div
-          className="fixed z-50 bg-white border border-line rounded-xl shadow-xl overflow-hidden w-32 py-0.5"
-          style={{ top: dropdownPos.top, right: dropdownPos.right }}
-          onMouseDown={e => e.stopPropagation()}
-        >
-          <button
-            onClick={() => {
-              const gear = gears.find(g => g.id === dropdownPos.gearId)
-              if (gear) setEditingGear(gear)
-              setDropdownPos(null)
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-ink hover:bg-fill transition-colors"
+        <>
+          <div
+            className="fixed inset-0 z-40 hidden sm:block"
+            onClick={() => setDropdownPos(null)}
+          />
+          <div
+            className="fixed z-50 bg-white border border-line rounded-xl shadow-xl overflow-hidden w-32 py-0.5"
+            style={{ top: dropdownPos.top, right: dropdownPos.right }}
           >
-            <Pencil size={13} strokeWidth={2} className="text-ink-3 shrink-0" />
-            Edit
-          </button>
-          <button
-            onClick={() => { handleDelete(dropdownPos.gearId); setDropdownPos(null) }}
-            className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
-          >
-            <X size={13} strokeWidth={2} className="shrink-0" />
-            Delete
-          </button>
-        </div>
+            <button
+              onClick={() => {
+                const gear = gears.find(g => g.id === dropdownPos.gearId)
+                if (gear) setEditingGear(gear)
+                setDropdownPos(null)
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-ink hover:bg-fill transition-colors"
+            >
+              <Pencil size={13} strokeWidth={2} className="text-ink-3 shrink-0" />
+              Edit
+            </button>
+            <button
+              onClick={() => { handleDelete(dropdownPos.gearId); setDropdownPos(null) }}
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <X size={13} strokeWidth={2} className="shrink-0" />
+              Delete
+            </button>
+          </div>
+        </>
       )}
 
       {editingGear && (
