@@ -22,8 +22,8 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
   const [editingGear, setEditingGear] = useState<Gear | null>(null)
   const [collapsed,   setCollapsed]   = useState<Set<string>>(new Set())
   const [showHint,    setShowHint]    = useState(false)
-  const [swipedId,    setSwipedId]    = useState<string | null>(null)     // mobile swipe/toggle
-  const [dropdownPos, setDropdownPos] = useState<DropdownPos | null>(null) // desktop dropdown
+  const [swipedId,    setSwipedId]    = useState<string | null>(null)
+  const [dropdownPos, setDropdownPos] = useState<DropdownPos | null>(null)
   const touchStartX = useRef<number>(0)
   const touchStartY = useRef<number>(0)
   const { fmt } = useWeightUnit()
@@ -33,17 +33,13 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     if (!dismissed) setShowHint(true)
   }, [])
 
-  // 外クリック/タップで閉じる
+  // デスクトップドロップダウン：外クリックで閉じる（mousedownのみ）
   useEffect(() => {
-    if (!swipedId && !dropdownPos) return
-    const close = () => { setSwipedId(null); setDropdownPos(null) }
+    if (!dropdownPos) return
+    const close = () => setDropdownPos(null)
     document.addEventListener('mousedown', close)
-    document.addEventListener('touchstart', close)
-    return () => {
-      document.removeEventListener('mousedown', close)
-      document.removeEventListener('touchstart', close)
-    }
-  }, [swipedId, dropdownPos])
+    return () => document.removeEventListener('mousedown', close)
+  }, [dropdownPos])
 
   const dismissHint = () => {
     localStorage.setItem('ninauu_pack_hint_dismissed', '1')
@@ -94,7 +90,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     const isOpen      = swipedId === gear.id
     const accentColor = PARENT_COLOR[parentOf(gear.category)] ?? '#9CA3AF'
 
-    // スワイプ検出
+    // スワイプ検出（縦スクロールと区別）
     const onTouchStart = (e: React.TouchEvent) => {
       touchStartX.current = e.touches[0].clientX
       touchStartY.current = e.touches[0].clientY
@@ -102,9 +98,9 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     const onTouchEnd = (e: React.TouchEvent) => {
       const dx = e.changedTouches[0].clientX - touchStartX.current
       const dy = e.changedTouches[0].clientY - touchStartY.current
-      if (Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 36) {
-        if (dx < 0) { setSwipedId(gear.id); e.stopPropagation() }
-        else         { setSwipedId(null) }
+      if (Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 40) {
+        if (dx < 0) setSwipedId(gear.id)   // 左スワイプ → 開く
+        else        setSwipedId(null)        // 右スワイプ → 閉じる
       }
     }
 
@@ -114,7 +110,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         <button onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity - 1) }}
           className="w-5 h-5 rounded-full bg-fill-2 text-ink-2 text-xs font-bold flex items-center justify-center hover:bg-line transition-colors"
         >−</button>
-        <span className="w-4 text-center text-xs font-semibold text-ink nums">{entry.quantity}</span>
+        <span className="w-4 text-center text-xs font-semibold text-ink">{entry.quantity}</span>
         <button onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity + 1) }}
           className="w-5 h-5 rounded-full bg-fill-2 text-ink-2 text-xs font-bold flex items-center justify-center hover:bg-line transition-colors"
         >+</button>
@@ -143,23 +139,24 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        {/* スワイプアクションボタン（モバイル） */}
+        {/* スワイプアクションボタン（モバイル / z-20 でオーバーレイより上） */}
         <div
-          className={`absolute right-0 top-0 bottom-0 flex items-stretch sm:hidden transition-transform duration-200 ease-out ${
+          className={`absolute right-0 top-0 bottom-0 z-20 flex items-stretch sm:hidden transition-transform duration-200 ease-out ${
             isOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
-          onTouchStart={e => e.stopPropagation()}
+          onTouchStart={e => { e.stopPropagation(); touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY }}
+          onTouchEnd={e => e.stopPropagation()}
         >
           <button
-            onClick={() => { setEditingGear(gear); setSwipedId(null) }}
-            className="w-[72px] bg-blue-500 text-white flex flex-col items-center justify-center gap-0.5"
+            onTouchEnd={(e) => { e.stopPropagation(); setEditingGear(gear); setSwipedId(null) }}
+            className="w-[72px] bg-blue-500 text-white flex flex-col items-center justify-center gap-0.5 active:brightness-90"
           >
             <Pencil size={14} strokeWidth={2} />
             <span className="text-[11px] font-medium">Edit</span>
           </button>
           <button
-            onClick={() => { handleDelete(gear.id); setSwipedId(null) }}
-            className="w-[72px] bg-red-500 text-white flex flex-col items-center justify-center gap-0.5"
+            onTouchEnd={(e) => { e.stopPropagation(); handleDelete(gear.id); setSwipedId(null) }}
+            className="w-[72px] bg-red-500 text-white flex flex-col items-center justify-center gap-0.5 active:brightness-90"
           >
             <X size={14} strokeWidth={2} />
             <span className="text-[11px] font-medium">Delete</span>
@@ -216,10 +213,9 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
             {/* "…" モバイル：スライドトグル */}
             <button
-              className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg text-[#999] active:bg-black/5 transition-colors shrink-0"
+              className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg text-[#999] active:bg-black/5 shrink-0"
               aria-label="More options"
-              onTouchStart={e => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); setSwipedId(isOpen ? null : gear.id) }}
+              onTouchEnd={(e) => { e.stopPropagation(); setSwipedId(isOpen ? null : gear.id) }}
             >
               <MoreHorizontal size={18} strokeWidth={2} />
             </button>
@@ -250,6 +246,14 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
   return (
     <div>
+      {/* スワイプ中：透明オーバーレイでタップ外を閉じる（document touchstart 不要） */}
+      {swipedId && (
+        <div
+          className="fixed inset-0 z-10 sm:hidden"
+          onTouchStart={() => setSwipedId(null)}
+        />
+      )}
+
       {/* Pack hint — 初回のみ */}
       {showHint && (
         <div className="flex items-center justify-between bg-fill border border-line rounded-xl px-3 py-2 mb-2">
@@ -282,9 +286,9 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
                     <span className="font-bold uppercase" style={{ fontSize: '11px', color: '#888', letterSpacing: '0.05em' }}>
                       {parent}
                     </span>
-                    <span className="text-[10px] text-ink-3 bg-fill-2 rounded-full px-1.5 py-0.5 nums">{items.length}</span>
+                    <span className="text-[10px] text-ink-3 bg-fill-2 rounded-full px-1.5 py-0.5">{items.length}</span>
                     {checkedCount > 0 && (
-                      <span className="text-[10px] text-surface bg-ink rounded-full px-1.5 py-0.5 nums">✓ {checkedCount}</span>
+                      <span className="text-[10px] text-surface bg-ink rounded-full px-1.5 py-0.5">✓ {checkedCount}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
