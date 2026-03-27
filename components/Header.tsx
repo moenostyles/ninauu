@@ -16,7 +16,6 @@ export default function Header() {
   useEffect(() => {
     if (!user) return
 
-    // Fetch profile
     const load = async () => {
       const { data } = await supabase
         .from('profiles')
@@ -38,7 +37,6 @@ export default function Header() {
 
     load()
 
-    // Realtime: detect profile updates and reflect avatar immediately
     const channel = supabase
       .channel('header-profile')
       .on('postgres_changes', {
@@ -60,39 +58,43 @@ export default function Header() {
   if (!user) return null
 
   return (
-    <header className="bg-ink text-surface sticky top-0 z-50">
-      <div className="max-w-2xl mx-auto px-5 py-2 flex items-center justify-between">
-        <Link href="/" className="hover:opacity-75 transition-opacity flex items-baseline gap-2">
-          <h1 className="text-lg font-semibold text-surface tracking-tight">Ninauu</h1>
+    <header className="bg-white border-b border-[#eeeeee] sticky top-0 z-50">
+      <div className="max-w-2xl mx-auto px-5 h-12 flex items-center justify-between">
+        <Link href="/" className="hover:opacity-60 transition-opacity flex items-baseline gap-2">
+          <h1 className="text-lg font-semibold text-ink tracking-tight">Ninauu</h1>
           <span className="hidden sm:inline text-[10px] text-ink-3 font-normal">Essentials, only.</span>
         </Link>
 
-        {user && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggle}
-              aria-label={`Switch to ${unit === 'g' ? 'oz' : 'g'}`}
-              className="flex items-center text-[11px] font-medium rounded-full border border-ink-2 overflow-hidden"
-            >
-              <span className={`px-2 py-0.5 transition-colors ${unit === 'g' ? 'bg-surface text-ink' : 'text-ink-3'}`}>g</span>
-              <span className={`px-2 py-0.5 transition-colors ${unit === 'oz' ? 'bg-surface text-ink' : 'text-ink-3'}`}>oz</span>
-            </button>
-            <NotificationBell userId={user.id} />
-            <Link href={`/profile/${user.id}`} className="w-8 h-8 rounded-full overflow-hidden bg-ink-2 flex items-center justify-center shrink-0 hover:opacity-75 transition-opacity">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-sm font-bold text-surface">{initials}</span>
-              )}
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="text-xs text-ink-3 hover:text-surface transition-colors whitespace-nowrap"
-            >
-              Logout
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggle}
+            aria-label={`Switch to ${unit === 'g' ? 'oz' : 'g'}`}
+            className="flex items-center text-[11px] font-medium rounded-full border border-[#ddd] overflow-hidden"
+          >
+            <span className={`px-2 py-0.5 transition-colors ${unit === 'g'  ? 'bg-ink text-white' : 'text-[#999]'}`}>g</span>
+            <span className={`px-2 py-0.5 transition-colors ${unit === 'oz' ? 'bg-ink text-white' : 'text-[#999]'}`}>oz</span>
+          </button>
+
+          <NotificationBell userId={user.id} />
+
+          <Link
+            href={`/profile/${user.id}`}
+            className="w-8 h-8 rounded-full overflow-hidden bg-fill-2 flex items-center justify-center shrink-0 hover:opacity-75 transition-opacity"
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-sm font-bold text-ink">{initials}</span>
+            )}
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            className="text-xs text-[#bbb] hover:text-ink transition-colors whitespace-nowrap"
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </header>
   )
