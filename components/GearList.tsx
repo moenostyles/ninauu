@@ -134,7 +134,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     return (
       <div
         key={gear.id}
-        className="relative overflow-hidden rounded-xl animate-fade-slide-in"
+        className={`relative overflow-hidden rounded-xl animate-fade-slide-in ${isOpen ? 'z-20' : ''}`}
         style={{ touchAction: 'pan-y' }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}

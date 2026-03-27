@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import NotificationBell from '@/components/NotificationBell'
@@ -55,7 +56,11 @@ export default function Header() {
     return () => { supabase.removeChannel(channel) }
   }, [user])
 
-  const handleLogout = () => supabase.auth.signOut()
+  const router = useRouter()
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.replace('/')
+  }
 
   if (!user) return null
 
