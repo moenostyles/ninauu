@@ -78,29 +78,29 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     const moreMenu = (
       <div
         className="relative shrink-0"
-        onClick={e => e.stopPropagation()}  // 外クリック閉じと干渉しないように
+        onMouseDown={e => e.stopPropagation()}  // 外クリック閉じと干渉しないように
       >
         <button
           onClick={() => setOpenMenuId(isMenuOpen ? null : gear.id)}
-          className="w-7 h-7 flex items-center justify-center rounded-lg text-[#D1D5DB] hover:text-ink hover:bg-fill-2 transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-[#999] hover:text-ink active:bg-black/5 transition-colors"
           aria-label="More options"
         >
-          <MoreHorizontal size={14} strokeWidth={2} />
+          <MoreHorizontal size={18} strokeWidth={2} />
         </button>
         {isMenuOpen && (
-          <div className="absolute right-0 top-full mt-0.5 z-10 bg-white border border-line rounded-xl shadow-lg overflow-hidden w-28 py-0.5">
+          <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-line rounded-xl shadow-xl overflow-hidden w-32 py-0.5">
             <button
               onClick={() => { setEditingGear(gear); setOpenMenuId(null) }}
               className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-ink hover:bg-fill transition-colors"
             >
-              <Pencil size={12} strokeWidth={2} className="text-ink-3 shrink-0" />
+              <Pencil size={13} strokeWidth={2} className="text-ink-3 shrink-0" />
               Edit
             </button>
             <button
               onClick={() => { handleDelete(gear.id); setOpenMenuId(null) }}
               className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
             >
-              <X size={12} strokeWidth={2} className="shrink-0" />
+              <X size={13} strokeWidth={2} className="shrink-0" />
               Delete
             </button>
           </div>
@@ -148,7 +148,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         )}
 
         {/* ── 行1: チェック + 品名 + 重量 + "…" ── */}
-        <div className="flex items-center gap-2 pl-1">
+        <div className="flex items-center gap-1.5 pl-1">
 
           {/* チェックボックス */}
           <button
