@@ -22,8 +22,10 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
   const [editingGear, setEditingGear] = useState<Gear | null>(null)
   const [collapsed,   setCollapsed]   = useState<Set<string>>(new Set())
   const [showHint,    setShowHint]    = useState(false)
-  const [swipedId,    setSwipedId]    = useState<string | null>(null)
-  const [dropdownPos, setDropdownPos] = useState<DropdownPos | null>(null)
+  const [swipedId,       setSwipedId]       = useState<string | null>(null)
+  const [dropdownPos,    setDropdownPos]    = useState<DropdownPos | null>(null)
+  const [pendingDelete,  setPendingDelete]  = useState<{ id: string; name: string } | null>(null)
+  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const touchStartX = useRef<number>(0)
   const touchStartY = useRef<number>(0)
   const { fmt } = useWeightUnit()
@@ -31,6 +33,11 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
   useEffect(() => {
     const dismissed = localStorage.getItem('ninauu_pack_hint_dismissed')
     if (!dismissed) setShowHint(true)
+  }, [])
+
+  // アンマウント時にdeleteタイマーをクリア
+  useEffect(() => {
+    return () => { if (deleteTimer.current) clearTimeout(deleteTimer.current) }
   }, [])
 
 
@@ -48,10 +55,22 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     })
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this gear?')) return
-    await supabase.from('gears').delete().eq('id', id)
-    onDelete()
+  const handleDelete = (id: string, name: string) => {
+    // 即時削除（確認なし）→ 3秒間Undoトースト表示
+    if (deleteTimer.current) clearTimeout(deleteTimer.current)
+    setPendingDelete({ id, name })
+    setSwipedId(null)
+    setDropdownPos(null)
+    deleteTimer.current = setTimeout(async () => {
+      await supabase.from('gears').delete().eq('id', id)
+      setPendingDelete(null)
+      onDelete()
+    }, 3000)
+  }
+
+  const handleUndoDelete = () => {
+    if (deleteTimer.current) clearTimeout(deleteTimer.current)
+    setPendingDelete(null)
   }
 
   // デスクトップ「…」クリック：fixed位置でスマートdropup/dropdown
@@ -73,8 +92,11 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     )
   }
 
+  // pendingDelete中のギアはリストから一時的に除外（楽観的UI）
+  const visibleGears = pendingDelete ? gears.filter(g => g.id !== pendingDelete.id) : gears
+
   const grouped = PARENT_CATEGORIES
-    .map(parent => ({ parent, items: gears.filter(g => parentOf(g.category) === parent) }))
+    .map(parent => ({ parent, items: visibleGears.filter(g => parentOf(g.category) === parent) }))
     .filter(g => g.items.length > 0)
 
   const renderGearCard = (gear: Gear) => {
@@ -148,7 +170,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             <span className="text-[11px] font-medium">Edit</span>
           </button>
           <button
-            onTouchEnd={(e) => { e.stopPropagation(); handleDelete(gear.id); setSwipedId(null) }}
+            onTouchEnd={(e) => { e.stopPropagation(); handleDelete(gear.id, gear.name) }}
             className="w-[72px] bg-red-500 text-white flex flex-col items-center justify-center gap-0.5 active:brightness-90"
           >
             <X size={14} strokeWidth={2} />
@@ -329,7 +351,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
               Edit
             </button>
             <button
-              onClick={() => { handleDelete(dropdownPos.gearId); setDropdownPos(null) }}
+              onClick={() => { const g = gears.find(g => g.id === dropdownPos.gearId); handleDelete(dropdownPos.gearId, g?.name ?? ''); }}
               className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
             >
               <X size={13} strokeWidth={2} className="shrink-0" />
@@ -345,6 +367,21 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
           onClose={() => setEditingGear(null)}
           onSave={() => { onDelete(); setEditingGear(null) }}
         />
+      )}
+
+      {/* 削除Undoトースト */}
+      {pendingDelete && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-[#1A1A1A] text-white text-sm px-4 py-3 rounded-xl shadow-xl animate-fade-slide-in">
+          <span className="truncate max-w-[180px] opacity-80">
+            &ldquo;{pendingDelete.name}&rdquo; deleted
+          </span>
+          <button
+            onClick={handleUndoDelete}
+            className="font-semibold text-white underline underline-offset-2 shrink-0 hover:opacity-80 transition-opacity"
+          >
+            Undo
+          </button>
+        </div>
       )}
     </div>
   )
