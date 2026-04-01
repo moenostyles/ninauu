@@ -1,8 +1,23 @@
 import type { Metadata, Viewport } from 'next'
+import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import Providers from '@/components/Providers'
 import Header from '@/components/Header'
 import SwRegister from '@/components/SwRegister'
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '600'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+})
 
 const APP_URL = 'https://ninauu.vercel.app'
 const OG_DESCRIPTION =
@@ -39,13 +54,13 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#1C1C1E',
+  themeColor: '#ffffff',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="bg-fill min-h-screen">
+    <html lang="en" className={`${dmSans.variable} ${jetbrainsMono.variable}`}>
+      <body className="min-h-screen" style={{ background: '#fafaf8' }}>
         <Providers>
           <SwRegister />
           <Header />

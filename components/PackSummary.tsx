@@ -58,7 +58,7 @@ function DonutChart({
       aria-hidden
     >
       {/* トラック */}
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#374151" strokeWidth={sw} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth={sw} />
       {/* セグメント */}
       {segs.map(({ v, c }, i) => {
         if (v <= 0) return null
@@ -118,7 +118,7 @@ export default function PackSummary({
     <div className="mb-4 space-y-2">
 
       {/* ── TOTAL WEIGHT バー ─────────────────────────────────── */}
-      <div className="bg-ink text-surface rounded-2xl overflow-hidden">
+      <div className="bg-ink text-surface overflow-hidden" style={{ borderRadius: '12px' }}>
         <div className="px-4 py-3 flex items-center gap-3">
 
           {/* ドーナツチャート（アイテムありの時のみ） */}

@@ -35,11 +35,9 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     if (!dismissed) setShowHint(true)
   }, [])
 
-  // アンマウント時にdeleteタイマーをクリア
   useEffect(() => {
     return () => { if (deleteTimer.current) clearTimeout(deleteTimer.current) }
   }, [])
-
 
   const dismissHint = () => {
     localStorage.setItem('ninauu_pack_hint_dismissed', '1')
@@ -56,7 +54,6 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
   }
 
   const handleDelete = (id: string, name: string) => {
-    // 即時削除（確認なし）→ 3秒間Undoトースト表示
     if (deleteTimer.current) clearTimeout(deleteTimer.current)
     setPendingDelete({ id, name })
     setSwipedId(null)
@@ -73,7 +70,6 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     setPendingDelete(null)
   }
 
-  // デスクトップ「…」クリック：fixed位置でスマートdropup/dropdown
   const openDesktopMenu = (e: React.MouseEvent<HTMLButtonElement>, gearId: string) => {
     e.stopPropagation()
     if (dropdownPos?.gearId === gearId) { setDropdownPos(null); return }
@@ -86,26 +82,39 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
   if (gears.length === 0) {
     return (
-      <p className="text-ink-3 text-sm py-12 text-center">
-        No gear yet. Tap <span className="font-medium text-ink">+ Add</span> to start.
+      <p className="text-center py-12" style={{ fontSize: '14px', color: '#8E8E93' }}>
+        No gear yet. Tap <span className="font-medium" style={{ color: '#1C1C1E' }}>+ Add</span> to start.
       </p>
     )
   }
 
-  // pendingDelete中のギアはリストから一時的に除外（楽観的UI）
   const visibleGears = pendingDelete ? gears.filter(g => g.id !== pendingDelete.id) : gears
 
   const grouped = PARENT_CATEGORIES
     .map(parent => ({ parent, items: visibleGears.filter(g => parentOf(g.category) === parent) }))
     .filter(g => g.items.length > 0)
 
-  const renderGearCard = (gear: Gear) => {
+  // iOS-style grouped card rendering
+  // first card in group: rounded top corners only
+  // last card: rounded bottom corners only
+  // middle cards: no radius
+  // single card: all corners rounded
+  const renderGearCard = (gear: Gear, idx: number, total: number) => {
     const entry       = packItems.find((e) => e.gear.id === gear.id)
     const inPack      = !!entry
     const isOpen      = swipedId === gear.id
     const accentColor = PARENT_COLOR[parentOf(gear.category)] ?? '#9CA3AF'
 
-    // スワイプ検出（縦スクロールと区別）
+    const isFirst = idx === 0
+    const isLast  = idx === total - 1
+    const borderRadius = total === 1
+      ? '10px'
+      : isFirst
+      ? '10px 10px 0 0'
+      : isLast
+      ? '0 0 10px 10px'
+      : '0'
+
     const onTouchStart = (e: React.TouchEvent) => {
       touchStartX.current = e.touches[0].clientX
       touchStartY.current = e.touches[0].clientY
@@ -114,34 +123,37 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
       const dx = e.changedTouches[0].clientX - touchStartX.current
       const dy = e.changedTouches[0].clientY - touchStartY.current
       if (Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 40) {
-        if (dx < 0) setSwipedId(gear.id)   // 左スワイプ → 開く
-        else        setSwipedId(null)        // 右スワイプ → 閉じる
+        if (dx < 0) setSwipedId(gear.id)
+        else        setSwipedId(null)
       }
     }
 
-    // 数量ステッパー
     const stepper = inPack ? (
       <div className="flex items-center gap-1 shrink-0">
         <button onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity - 1) }}
-          className="w-5 h-5 rounded-full bg-fill-2 text-ink-2 text-xs font-bold flex items-center justify-center hover:bg-line transition-colors"
+          className="w-5 h-5 rounded-full flex items-center justify-center hover:opacity-70 transition-opacity"
+          style={{ background: 'rgba(0,0,0,0.06)', color: '#555', fontSize: '12px', fontWeight: 700 }}
         >−</button>
-        <span className="w-4 text-center text-xs font-semibold text-ink">{entry.quantity}</span>
+        <span className="w-4 text-center text-xs font-semibold" style={{ color: '#1C1C1E' }}>{entry.quantity}</span>
         <button onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity + 1) }}
-          className="w-5 h-5 rounded-full bg-fill-2 text-ink-2 text-xs font-bold flex items-center justify-center hover:bg-line transition-colors"
+          className="w-5 h-5 rounded-full flex items-center justify-center hover:opacity-70 transition-opacity"
+          style={{ background: 'rgba(0,0,0,0.06)', color: '#555', fontSize: '12px', fontWeight: 700 }}
         >+</button>
       </div>
     ) : null
 
-    // 重量（固定幅・tabular-nums）
     const weight = (
-      <div className="text-right shrink-0" style={{ width: '64px', minWidth: '64px' }}>
-        <span className="text-sm font-semibold tabular-nums" style={{ color: '#333' }}>
+      <div className="text-right shrink-0" style={{ minWidth: '70px' }}>
+        <span
+          className="weight-mono"
+          style={{ fontSize: '14px', color: '#555', display: 'block' }}
+        >
           {inPack && entry.quantity > 1 ? fmt(gear.weight_g * entry.quantity) : fmt(gear.weight_g)}
         </span>
         {inPack && entry.quantity > 1 && (
-          <p className="text-[10px] text-ink-3 tabular-nums leading-tight">
+          <span className="weight-mono" style={{ fontSize: '10px', color: '#aaa', display: 'block', lineHeight: 1.2 }}>
             {fmt(gear.weight_g)}×{entry.quantity}
-          </p>
+          </span>
         )}
       </div>
     )
@@ -149,12 +161,12 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     return (
       <div
         key={gear.id}
-        className={`relative overflow-hidden rounded-xl animate-fade-slide-in ${isOpen ? 'z-20' : ''}`}
-        style={{ touchAction: 'pan-y' }}
+        className={`relative overflow-hidden animate-fade-slide-in ${isOpen ? 'z-20' : ''}`}
+        style={{ touchAction: 'pan-y', borderRadius }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        {/* スワイプアクションボタン（モバイル / z-20 でオーバーレイより上） */}
+        {/* Swipe action buttons (mobile) */}
         <div
           className={`absolute right-0 top-0 bottom-0 z-20 flex items-stretch sm:hidden transition-transform duration-200 ease-out ${
             isOpen ? 'translate-x-0' : 'translate-x-full'
@@ -164,93 +176,120 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         >
           <button
             onTouchEnd={(e) => { e.stopPropagation(); setEditingGear(gear); setSwipedId(null) }}
-            className="w-[72px] bg-blue-500 text-white flex flex-col items-center justify-center gap-0.5 active:brightness-90"
+            className="w-[72px] flex flex-col items-center justify-center gap-0.5 active:brightness-90"
+            style={{ background: '#3B82F6', color: '#fff' }}
           >
             <Pencil size={14} strokeWidth={2} />
-            <span className="text-[11px] font-medium">Edit</span>
+            <span style={{ fontSize: '11px', fontWeight: 500 }}>Edit</span>
           </button>
           <button
             onTouchEnd={(e) => { e.stopPropagation(); handleDelete(gear.id, gear.name) }}
-            className="w-[72px] bg-red-500 text-white flex flex-col items-center justify-center gap-0.5 active:brightness-90"
+            className="w-[72px] flex flex-col items-center justify-center gap-0.5 active:brightness-90"
+            style={{ background: '#EF4444', color: '#fff', borderRadius: isLast ? '0 0 10px 0' : isFirst && total === 1 ? '0 10px 10px 0' : '0' }}
           >
             <X size={14} strokeWidth={2} />
-            <span className="text-[11px] font-medium">Delete</span>
+            <span style={{ fontSize: '11px', fontWeight: 500 }}>Delete</span>
           </button>
         </div>
 
-        {/* カード本体（スワイプで左スライド） */}
+        {/* Card body */}
         <div
-          className={`relative border px-3 py-2 sm:px-4 sm:py-2.5 sm:rounded-xl transition-transform duration-200 ease-out ${
-            inPack ? 'border-ink/20 bg-fill' : 'border-line bg-surface hover:border-ink-3'
-          } ${isOpen ? '-translate-x-[144px] sm:translate-x-0' : 'translate-x-0'}`}
+          className={`relative transition-transform duration-200 ease-out ${
+            isOpen ? '-translate-x-[144px] sm:translate-x-0' : 'translate-x-0'
+          }`}
+          style={{
+            border: '1px solid rgba(0,0,0,0.06)',
+            background: inPack ? '#f7f7f5' : '#ffffff',
+            padding: '12px 16px',
+            borderRadius,
+          }}
         >
-          {/* カテゴリ別左ボーダーアクセント（チェック済みのみ） */}
+          {/* Category left accent (checked items) */}
           {inPack && (
-            <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: accentColor }} />
+            <div
+              className="absolute left-0 top-0 bottom-0"
+              style={{ width: '3px', backgroundColor: accentColor, borderRadius: `${borderRadius.split(' ')[0]} 0 0 ${borderRadius.split(' ')[borderRadius.split(' ').length - 1]}` }}
+            />
           )}
 
-          {/* 行1: チェック + 品名 + 重量 + "…" */}
+          {/* Row 1: checkbox + name + weight + "..." */}
           <div className="flex items-center gap-1.5 pl-1">
 
-            {/* チェックボックス */}
+            {/* Checkbox */}
             <button
               onClick={() => onTogglePack(gear)}
               aria-label={inPack ? 'Remove from pack' : 'Add to pack'}
-              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                inPack ? 'bg-ink border-ink text-surface' : 'border-line hover:border-ink'
-              }`}
+              className="flex items-center justify-center shrink-0 transition-all"
+              style={{
+                width: '20px', height: '20px',
+                borderRadius: '50%',
+                border: inPack ? `2px solid ${accentColor}` : '2px solid rgba(0,0,0,0.15)',
+                background: inPack ? accentColor : 'transparent',
+                color: '#fff',
+              }}
             >
               {inPack && (
-                <svg className="w-2.5 h-2.5 animate-scale-in" fill="none" viewBox="0 0 24 24"
+                <svg className="animate-scale-in" width="10" height="10" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               )}
             </button>
 
-            {/* 品名（flex-1 で残り幅を使い切る） */}
+            {/* Gear name */}
             <div className="flex-1 min-w-0">
-              <p className="font-medium truncate leading-snug" style={{ fontSize: '15px', color: '#1A1A1A' }}>
+              <p
+                className="truncate leading-snug"
+                style={{ fontSize: '15px', fontWeight: 500, color: '#1C1C1E' }}
+              >
                 {gear.name}
               </p>
               <div className="hidden sm:flex items-center gap-1 mt-0.5">
-                {gear.brand && <span className="truncate" style={{ fontSize: '13px', color: '#999' }}>{gear.brand}</span>}
-                {gear.brand && <span style={{ fontSize: '13px', color: '#ccc' }}>·</span>}
-                <span className="shrink-0" style={{ fontSize: '13px', color: '#999' }}>{gear.category}</span>
+                {gear.brand && (
+                  <span className="truncate" style={{ fontSize: '12px', color: '#aaa' }}>{gear.brand}</span>
+                )}
+                {gear.brand && <span style={{ fontSize: '12px', color: '#ddd' }}>·</span>}
+                <span className="shrink-0" style={{ fontSize: '12px', color: '#aaa' }}>{gear.category}</span>
               </div>
             </div>
 
-            {/* デスクトップ: ステッパー */}
+            {/* Desktop: stepper */}
             {inPack && <div className="hidden sm:flex">{stepper}</div>}
 
-            {/* 重量 */}
+            {/* Weight */}
             {weight}
 
-            {/* "…" モバイル：スライドトグル */}
+            {/* "..." mobile: slide toggle */}
             <button
-              className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg text-[#999] active:bg-black/5 shrink-0"
+              className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg active:bg-black/5 shrink-0"
+              style={{ color: '#bbb' }}
               aria-label="More options"
               onTouchEnd={(e) => { e.stopPropagation(); setSwipedId(isOpen ? null : gear.id) }}
             >
-              <MoreHorizontal size={18} strokeWidth={2} />
+              <MoreHorizontal size={16} strokeWidth={2} />
             </button>
 
-            {/* "…" デスクトップ：常時表示（薄色）→ hover で濃く */}
+            {/* "..." desktop: hover-only */}
             <button
-              className="hidden sm:flex w-8 h-8 items-center justify-center rounded-lg text-[#ccc] hover:text-[#555] hover:bg-black/5 active:bg-black/8 transition-all shrink-0"
+              className="hidden sm:flex w-8 h-8 items-center justify-center rounded-lg shrink-0 transition-all"
+              style={{ color: 'transparent' }}
               aria-label="More options"
               onClick={(e) => openDesktopMenu(e, gear.id)}
+              onMouseEnter={e => (e.currentTarget.style.color = '#8E8E93')}
+              onMouseLeave={e => { if (dropdownPos?.gearId !== gear.id) e.currentTarget.style.color = 'transparent' }}
             >
               <MoreHorizontal size={18} strokeWidth={2} />
             </button>
           </div>
 
-          {/* 行2（モバイルのみ）: ブランド · カテゴリ + ステッパー */}
+          {/* Row 2 (mobile only): brand · category + stepper */}
           <div className="flex sm:hidden items-center justify-between mt-1 pl-7">
             <div className="flex items-center gap-1 min-w-0 flex-1">
-              {gear.brand && <span className="truncate" style={{ fontSize: '13px', color: '#999' }}>{gear.brand}</span>}
-              {gear.brand && <span style={{ fontSize: '13px', color: '#ccc' }}>·</span>}
-              <span className="shrink-0" style={{ fontSize: '13px', color: '#999' }}>{gear.category}</span>
+              {gear.brand && (
+                <span className="truncate" style={{ fontSize: '12px', color: '#aaa' }}>{gear.brand}</span>
+              )}
+              {gear.brand && <span style={{ fontSize: '12px', color: '#ddd' }}>·</span>}
+              <span className="shrink-0" style={{ fontSize: '12px', color: '#aaa' }}>{gear.category}</span>
             </div>
             {stepper}
           </div>
@@ -261,7 +300,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
   return (
     <div>
-      {/* スワイプ中：透明オーバーレイでタップ外を閉じる（document touchstart 不要） */}
+      {/* Swipe overlay: tap outside to close */}
       {swipedId && (
         <div
           className="fixed inset-0 z-10 sm:hidden"
@@ -269,11 +308,14 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         />
       )}
 
-      {/* Pack hint — 初回のみ */}
+      {/* Pack hint — first time only */}
       {showHint && (
-        <div className="flex items-center justify-between bg-fill border border-line rounded-xl px-3 py-2 mb-2">
-          <span className="text-xs text-ink-3">○  Tap the circle to add gear to your pack</span>
-          <button onClick={dismissHint} aria-label="Dismiss hint" className="ml-2 shrink-0 text-ink-3 hover:text-ink">
+        <div
+          className="flex items-center justify-between rounded-xl px-3 py-2 mb-2"
+          style={{ background: '#fafaf8', border: '1px solid rgba(0,0,0,0.06)' }}
+        >
+          <span style={{ fontSize: '12px', color: '#8E8E93' }}>○  Tap the circle to add gear to your pack</span>
+          <button onClick={dismissHint} aria-label="Dismiss hint" className="ml-2 shrink-0 hover:opacity-50 transition-opacity" style={{ color: '#8E8E93' }}>
             <X size={12} strokeWidth={2} />
           </button>
         </div>
@@ -281,7 +323,10 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
       <div>
         {grouped.length === 1 ? (
-          <div className="space-y-1">{grouped[0].items.map(renderGearCard)}</div>
+          // Single group: render cards without category header, with iOS grouping
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+            {grouped[0].items.map((g, i) => renderGearCard(g, i, grouped[0].items.length))}
+          </div>
         ) : (
           grouped.map(({ parent, items }) => {
             const isCollapsed  = collapsed.has(parent)
@@ -290,7 +335,8 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             const headerColor  = PARENT_COLOR[parent] ?? '#888'
 
             return (
-              <div key={parent} className="mb-0.5">
+              <div key={parent} className="mb-1">
+                {/* Category header */}
                 <button
                   onClick={() => toggleCollapse(parent)}
                   aria-expanded={!isCollapsed}
@@ -298,28 +344,45 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: headerColor }} />
-                    <span className="font-bold uppercase" style={{ fontSize: '11px', color: '#888', letterSpacing: '0.05em' }}>
+                    <span
+                      className="uppercase"
+                      style={{ fontSize: '11px', fontWeight: 600, color: '#888', letterSpacing: '0.08em' }}
+                    >
                       {parent}
                     </span>
-                    <span className="text-[10px] text-ink-3 bg-fill-2 rounded-full px-1.5 py-0.5">{items.length}</span>
+                    <span
+                      className="rounded-full px-1.5 py-0.5"
+                      style={{ fontSize: '10px', color: '#aaa', background: 'rgba(0,0,0,0.05)' }}
+                    >
+                      {items.length}
+                    </span>
                     {checkedCount > 0 && (
-                      <span className="text-[10px] text-surface bg-ink rounded-full px-1.5 py-0.5">✓ {checkedCount}</span>
+                      <span
+                        className="rounded-full px-1.5 py-0.5"
+                        style={{ fontSize: '10px', color: '#fff', background: '#1C1C1E' }}
+                      >
+                        ✓ {checkedCount}
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-ink-3 tabular-nums">{fmt(totalWeight)}</span>
+                    <span className="weight-mono" style={{ fontSize: '11px', color: '#aaa' }}>
+                      {fmt(totalWeight)}
+                    </span>
                     <ChevronDown
                       size={12} strokeWidth={2.5} aria-hidden
-                      className={`text-ink-3 transition-transform duration-150 ${isCollapsed ? '' : 'rotate-180'}`}
+                      className={`transition-transform duration-150 ${isCollapsed ? '' : 'rotate-180'}`}
+                      style={{ color: '#aaa' }}
                     />
                   </div>
                 </button>
 
+                {/* Cards — iOS grouped list style */}
                 <div className={`overflow-hidden transition-all duration-200 ease-in-out ${
                   isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[9999px] opacity-100'
                 }`}>
-                  <div className="space-y-1 pb-2">
-                    {items.map(renderGearCard)}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', paddingBottom: '4px' }}>
+                    {items.map((g, i) => renderGearCard(g, i, items.length))}
                   </div>
                 </div>
               </div>
@@ -328,16 +391,26 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         )}
       </div>
 
-      {/* デスクトップドロップダウン：外クリック閉じ用オーバーレイ（z-40）+ ドロップダウン本体（z-50） */}
+      {/* Desktop dropdown: z-40 overlay + z-50 dropdown */}
       {dropdownPos && (
         <>
           <div
-            className="fixed inset-0 z-40 hidden sm:block"
+            className="fixed inset-0 hidden sm:block"
+            style={{ zIndex: 40 }}
             onClick={() => setDropdownPos(null)}
           />
           <div
-            className="fixed z-50 bg-white border border-line rounded-xl shadow-xl overflow-hidden w-32 py-0.5"
-            style={{ top: dropdownPos.top, right: dropdownPos.right }}
+            className="fixed overflow-hidden py-0.5"
+            style={{
+              top: dropdownPos.top,
+              right: dropdownPos.right,
+              zIndex: 50,
+              background: '#fff',
+              border: '1px solid rgba(0,0,0,0.08)',
+              borderRadius: '10px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              width: '128px',
+            }}
           >
             <button
               onClick={() => {
@@ -345,16 +418,21 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
                 if (gear) setEditingGear(gear)
                 setDropdownPos(null)
               }}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-ink hover:bg-fill transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-[#fafaf8]"
+              style={{ fontSize: '14px', color: '#1C1C1E' }}
             >
-              <Pencil size={13} strokeWidth={2} className="text-ink-3 shrink-0" />
+              <Pencil size={13} strokeWidth={2} style={{ color: '#8E8E93', flexShrink: 0 }} />
               Edit
             </button>
             <button
-              onClick={() => { const g = gears.find(g => g.id === dropdownPos.gearId); handleDelete(dropdownPos.gearId, g?.name ?? ''); }}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+              onClick={() => {
+                const g = gears.find(g => g.id === dropdownPos.gearId)
+                handleDelete(dropdownPos.gearId, g?.name ?? '')
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-red-50"
+              style={{ fontSize: '14px', color: '#EF4444' }}
             >
-              <X size={13} strokeWidth={2} className="shrink-0" />
+              <X size={13} strokeWidth={2} style={{ flexShrink: 0 }} />
               Delete
             </button>
           </div>
@@ -369,15 +447,28 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         />
       )}
 
-      {/* 削除Undoトースト */}
+      {/* Delete Undo toast */}
       {pendingDelete && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-[#1A1A1A] text-white text-sm px-4 py-3 rounded-xl shadow-xl animate-fade-slide-in">
-          <span className="truncate max-w-[180px] opacity-80">
+        <div
+          className="fixed left-1/2 -translate-x-1/2 flex items-center gap-3 animate-fade-slide-in"
+          style={{
+            bottom: '24px',
+            zIndex: 60,
+            background: '#1a1a1a',
+            color: '#fff',
+            fontSize: '14px',
+            padding: '12px 20px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          }}
+        >
+          <span className="truncate opacity-80" style={{ maxWidth: '180px' }}>
             &ldquo;{pendingDelete.name}&rdquo; deleted
           </span>
           <button
             onClick={handleUndoDelete}
-            className="font-semibold text-white underline underline-offset-2 shrink-0 hover:opacity-80 transition-opacity"
+            className="shrink-0 font-semibold hover:opacity-80 transition-opacity"
+            style={{ color: '#FF6B35' }}
           >
             Undo
           </button>

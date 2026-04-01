@@ -3,24 +3,28 @@
 /* ── Ninauu Design Tokens ── */
 @theme {
   /* Brand */
-  --color-brand:      #E64A19;
-  --color-brand-dark: #C43E15;
+  --color-brand:      #FF6B35;
+  --color-brand-dark: #E85A20;
   --color-brand-soft: #FFF0EC;
 
   /* Ink (text / dark surfaces) */
-  --color-ink:   #1A1A1A;
+  --color-ink:   #1C1C1E;
   --color-ink-2: #3D3D3D;
-  --color-ink-3: #909090;
+  --color-ink-3: #8E8E93;
 
   /* Fill (backgrounds) */
-  --color-fill:   #F5F5F5;
-  --color-fill-2: #EBEBEB;
+  --color-fill:   #fafaf8;
+  --color-fill-2: #F2F2F2;
 
   /* Line (borders / separators) */
-  --color-line: #DEDEDE;
+  --color-line: rgba(0, 0, 0, 0.06);
 
   /* Surface */
   --color-surface: #FFFFFF;
+
+  /* Fonts */
+  --font-sans: var(--font-dm-sans), 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 }
 
 /* ── Base ── */
@@ -29,11 +33,19 @@ html {
 }
 
 body {
-  background: #F5F5F5;
+  background: #fafaf8;
   color: #1C1C1E;
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Inter', Arial, sans-serif;
+  font-family: var(--font-dm-sans), 'DM Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Weight data — JetBrains Mono */
+.weight-mono {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  letter-spacing: -0.02em;
 }
 
 /* Tabular numbers — weight/quantity 表示を揃える */
@@ -60,8 +72,24 @@ body {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-scale-in    { animation: scale-in      0.12s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-.animate-fade-slide-in { animation: fade-slide-in 0.18s ease-out forwards; }
-@media (prefers-reduced-motion: reduce) {
-  .animate-scale-in, .animate-fade-slide-in { animation: none; }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
+@keyframes count-up {
+  from { opacity: 0.4; }
+  to   { opacity: 1; }
+}
+.animate-scale-in       { animation: scale-in      0.12s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-fade-slide-in  { animation: fade-slide-in 0.2s ease-out forwards; }
+.animate-fade-in        { animation: fade-in 0.2s ease-out forwards; }
+.animate-count-up       { animation: count-up 0.3s ease-out forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scale-in, .animate-fade-slide-in, .animate-fade-in, .animate-count-up {
+    animation: none;
+  }
+}
+
+/* z-index scale */
+/* header=40, sticky-filter=30, popover=50, snackbar=60, modal=70 */
