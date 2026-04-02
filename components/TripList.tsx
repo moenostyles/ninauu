@@ -113,7 +113,7 @@ export default function TripList({ trips, onRefresh, onNewTrip }: Props) {
           >
             {/* Summary row */}
             <div
-              className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-fill transition-colors"
+              className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-secondary transition-colors"
               onClick={() => handleExpand(trip.id)}
             >
               <div className="flex-1 min-w-0">
@@ -166,7 +166,7 @@ export default function TripList({ trips, onRefresh, onNewTrip }: Props) {
 
             {/* Detail panel */}
             {isExpanded && (
-              <div className="border-t border-line px-4 py-4 bg-fill space-y-4">
+              <div className="border-t border-line px-4 py-4 bg-secondary space-y-4">
                 {items.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-2">

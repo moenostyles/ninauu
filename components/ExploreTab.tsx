@@ -52,7 +52,7 @@ function formatDateRange(start: string, end: string) {
 
 function Avatar({ displayName, avatarUrl, size = 7 }: { displayName: string | null; avatarUrl: string | null; size?: number }) {
   const initial = displayName?.charAt(0)?.toUpperCase() ?? '?'
-  const cls = `w-${size} h-${size} rounded-full overflow-hidden bg-fill-2 flex items-center justify-center shrink-0`
+  const cls = `w-${size} h-${size} rounded-full overflow-hidden bg-tertiary flex items-center justify-center shrink-0`
   return (
     <div className={cls}>
       {avatarUrl ? (
@@ -329,7 +329,7 @@ export default function ExploreTab({ currentUserId }: Props) {
             searchResults.map((u) => (
               <div key={u.id} className="bg-white border border-line rounded-xl px-4 py-3 flex items-center gap-3">
                 <Link href={`/profile/${u.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-70 transition-opacity">
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-fill-2 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-tertiary flex items-center justify-center shrink-0">
                     {u.avatar_url ? (
                       <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
                     ) : (
