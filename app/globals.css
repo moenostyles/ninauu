@@ -1,40 +1,40 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Ninauu Design System — Dark Mode (Industrial Minimal)
+   Ninauu Design System — Light Mode (Clean & Minimal)
    ui-ux-pro-max spec準拠: CSS変数一元管理 / 2フォント / 4px倍数スペーシング
 ───────────────────────────────────────────────────────────────────────────── */
 
 :root {
   /* ── Background ── */
-  --bg-primary:    #0a0a0b;
-  --bg-secondary:  #111113;
-  --bg-tertiary:   #1a1a1f;
-  --bg-elevated:   #222228;
+  --bg-primary:    #ffffff;
+  --bg-secondary:  #f8f9fa;
+  --bg-tertiary:   #f0f1f3;
+  --bg-elevated:   #e8eaed;
 
   /* ── Text ── */
-  --text-primary:   #ededef;
-  --text-secondary: #8b8b8e;
-  --text-tertiary:  #555558;
+  --text-primary:   #1a1a1a;
+  --text-secondary: #666666;
+  --text-tertiary:  #999999;
 
   /* ── Border ── */
-  --border-subtle:  rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.10);
-  --border-strong:  rgba(255, 255, 255, 0.16);
+  --border-subtle:  rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.10);
+  --border-strong:  rgba(0, 0, 0, 0.16);
 
-  /* ── Category colors (muted for dark bg) ── */
-  --cat-shelter:  #5B9BD5;
-  --cat-pack:     #6BC77A;
-  --cat-sleep:    #9B7FCF;
-  --cat-cookware: #D4915E;
-  --cat-field:    #5BBFCF;
-  --cat-apparel:  #C49A4E;
-  --cat-others:   #6B6B6E;
+  /* ── Category colors (vibrant for light bg) ── */
+  --cat-shelter:  #4a90e2;
+  --cat-pack:     #50c878;
+  --cat-sleep:    #9b59b6;
+  --cat-cookware: #e67e22;
+  --cat-field:    #3498db;
+  --cat-apparel:  #d4a574;
+  --cat-others:   #95a5a6;
 
   /* ── Semantic ── */
-  --color-destructive: #E5484D;
-  --color-success:     #46A758;
-  --color-accent:      #ededef;
+  --color-destructive: #e74c3c;
+  --color-success:     #27ae60;
+  --color-accent:      #2c3e50;
 
   /* ── Fonts ── */
   --font-sans: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -75,10 +75,10 @@
   --color-ink:     var(--text-primary);
   --color-ink-2:   var(--text-secondary);
   --color-ink-3:   var(--text-tertiary);
-  --color-fill:    var(--bg-primary);
+  --color-fill:    var(--bg-secondary);
   --color-fill-2:  var(--bg-tertiary);
   --color-line:    var(--border-subtle);
-  --color-surface: var(--bg-secondary);
+  --color-surface: var(--bg-primary);
   --color-brand:   var(--color-accent);
   --font-sans:     var(--font-inter), 'Inter', -apple-system, sans-serif;
   --font-mono:     var(--font-jetbrains-mono), 'JetBrains Mono', monospace;

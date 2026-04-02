@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, Backpack, MapPin, Compass } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { Gear, Trip, PackEntry, SavedPack, Visibility, CATEGORY_TREE, PARENT_CATEGORIES, parentOf } from '@/types'
@@ -161,6 +161,13 @@ export default function Home() {
     })
 
   const packGearCount = packItems.reduce((s, e) => s + e.quantity, 0)
+  const getTabIcon = (key: Tab) => {
+    switch(key) {
+      case 'gear': return <Backpack size={16} strokeWidth={2} />
+      case 'trips': return <MapPin size={16} strokeWidth={2} />
+      case 'explore': return <Compass size={16} strokeWidth={2} />
+    }
+  }
   const tabs: { key: Tab; label: string; badge?: number }[] = [
     { key: 'gear',    label: 'Gear',    badge: packGearCount || undefined },
     { key: 'trips',   label: 'Trips',   badge: trips.length || undefined },
@@ -219,6 +226,7 @@ export default function Home() {
             onMouseEnter={e => { if (activeTab !== key) e.currentTarget.style.color = 'var(--text-secondary)' }}
             onMouseLeave={e => { if (activeTab !== key) e.currentTarget.style.color = 'var(--text-tertiary)' }}
           >
+            {getTabIcon(key)}
             {label}
             {badge ? (
               <span
@@ -463,11 +471,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── FAB (mobile only, Gear tab) ── */}
+      {/* ── FAB (Gear tab) ── */}
       {activeTab === 'gear' && (
         <button
           onClick={() => { setAddMode((p) => (p ? null : 'search')); setGearInitialName(''); setSearchInitialQuery('') }}
-          className="sm:hidden"
           style={{
             position: 'fixed',
             bottom: '24px',
@@ -483,7 +490,7 @@ export default function Home() {
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             transition: 'transform var(--transition)',
           }}
           onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
