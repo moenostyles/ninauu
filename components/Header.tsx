@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import NotificationBell from '@/components/NotificationBell'
@@ -57,12 +56,6 @@ export default function Header() {
 
     return () => { supabase.removeChannel(channel) }
   }, [user])
-
-  const router = useRouter()
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.replace('/login')
-  }
 
   if (!user) return null
 
@@ -147,15 +140,6 @@ export default function Header() {
               <span style={{ fontSize: 'var(--text-sub)', fontWeight: 600, color: 'var(--text-secondary)' }}>{initials}</span>
             )}
           </Link>
-
-          <button
-            onClick={handleLogout}
-            style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', transition: 'color var(--transition)', whiteSpace: 'nowrap', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
-          >
-            Logout
-          </button>
         </div>
       </div>
     </header>

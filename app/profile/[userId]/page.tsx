@@ -190,7 +190,6 @@ export default function ProfilePage() {
 
   useEffect(() => { loadProfile() }, [loadProfile])
 
-  // ... メニュー外クリックで閉じる
   useEffect(() => {
     if (!showMenu) return
     const handler = (e: MouseEvent) => {
@@ -258,6 +257,7 @@ export default function ProfilePage() {
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
       const avatarUrl = urlData.publicUrl + '?t=' + Date.now()
       const { error: updateError } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id)
+      
       if (updateError) {
         alert('Profile update failed: ' + updateError.message)
       } else {
@@ -332,7 +332,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* 名前 + stats（ボタン類は含めない） */}
+          {/* 名前 + stats */}
           <div className="flex-1 min-w-0">
             {editingProfile ? (
               <div className="space-y-2">
@@ -351,53 +351,57 @@ export default function ProfilePage() {
                   className="w-full border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink"
                 />
                 <div className="flex gap-2">
-                  <button onClick={handleSaveProfile} disabled={savingProfile}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-ink text-surface text-xs rounded-lg disabled:opacity-40">
-                    <Check size={12} strokeWidth={2.5} /> Save
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={savingProfile}
+                    className="flex-1 py-1.5 bg-ink text-surface text-xs font-medium rounded-lg hover:bg-ink-2 transition-colors disabled:opacity-40"
+                  >
+                    {savingProfile ? '…' : 'Save'}
                   </button>
-                  <button onClick={() => setEditingProfile(false)}
-                    className="flex items-center gap-1 px-3 py-1.5 border border-line text-ink-3 text-xs rounded-lg">
-                    <X size={12} strokeWidth={2.5} /> Cancel
+                  <button
+                    onClick={() => setEditingProfile(false)}
+                    className="flex-1 py-1.5 border border-line text-ink-3 text-xs font-medium rounded-lg hover:bg-fill transition-colors"
+                  >
+                    Cancel
                   </button>
                 </div>
               </div>
             ) : (
               <>
-                {/* 表示名 */}
-                <div className="flex items-center gap-1.5">
-                  <p className="font-semibold text-base text-ink leading-tight truncate">
-                    {profile.display_name ?? profile.username ?? 'Anonymous'}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-semibold text-ink">{profile.display_name ?? profile.username ?? 'Anonymous'}</p>
                   {isOwn && (
                     <button
-                      onClick={() => { setEditDisplayName(profile.display_name ?? ''); setEditUsername(profile.username ?? ''); setEditingProfile(true) }}
-                      className="shrink-0 text-line hover:text-ink transition-colors p-0.5"
+                      onClick={() => {
+                        setEditingProfile(true)
+                        setEditDisplayName(profile.display_name ?? '')
+                        setEditUsername(profile.username ?? '')
+                      }}
+                      className="p-1 rounded-lg text-ink-3 hover:text-ink hover:bg-fill transition-colors"
                     >
-                      <Pencil size={12} strokeWidth={2} />
+                      <Pencil size={14} strokeWidth={2} />
                     </button>
                   )}
                 </div>
-                {/* @username */}
-                {profile.username && (
-                  <p className="text-xs text-ink-3 mt-0.5">@{profile.username}</p>
-                )}
-                {/* followers / following */}
-                <div className="flex gap-4 mt-2 text-xs text-ink-3">
-                  <button onClick={() => setShowFollowers(true)} className="hover:text-ink transition-colors">
-                    <strong className="text-ink">{followerCount}</strong> followers
-                  </button>
-                  <button onClick={() => setShowFollowing(true)} className="hover:text-ink transition-colors">
-                    <strong className="text-ink">{followingCount}</strong> following
-                  </button>
-                </div>
+                {profile.username && <p className="text-xs text-ink-3">@{profile.username}</p>}
               </>
             )}
+
+            {/* Stats */}
+            <div className="flex gap-4 mt-2">
+              <button onClick={() => setShowFollowers(true)} className="text-xs text-ink-3 hover:text-ink transition-colors">
+                <span className="font-semibold text-ink">{followerCount}</span> Followers
+              </button>
+              <button onClick={() => setShowFollowing(true)} className="text-xs text-ink-3 hover:text-ink transition-colors">
+                <span className="font-semibold text-ink">{followingCount}</span> Following
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* ── Follow / ... ボタン行（他ユーザー閲覧時のみ） ── */}
-        {!isOwn && user && !editingProfile && (
-          <div className="flex gap-2">
+        {/* ── Follow / Block buttons (他人のプロフィール) ── */}
+        {!isOwn && (
+          <div className="flex gap-2 pt-2">
             {/* Follow — flex-1 で横幅を最大に */}
             <button
               onClick={handleFollow}
@@ -541,7 +545,18 @@ export default function ProfilePage() {
       )}
 
       {isOwn && (
-        <div className="mt-12 pt-8 border-t border-line">
+        <div className="mt-12 pt-8 border-t border-line space-y-4">
+          {/* Logout button */}
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut()
+              router.push('/login')
+            }}
+            className="w-full py-2 px-4 text-sm font-medium text-ink-3 hover:text-ink hover:bg-fill rounded-xl transition-colors border border-line"
+          >
+            Logout
+          </button>
+
           {!showDeleteConfirm ? (
             <button
               onClick={() => setShowDeleteConfirm(true)}

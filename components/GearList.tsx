@@ -236,16 +236,11 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
               )}
             </button>
 
-            {/* Gear name + brand/category */}
+            {/* Gear name */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontSize: 'var(--text-gear)', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
                 {gear.name}
               </p>
-              <div className="hidden sm:flex" style={{ alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                {gear.brand && <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)' }}>{gear.brand}</span>}
-                {gear.brand && <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)' }}>·</span>}
-                <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)', flexShrink: 0 }}>{gear.category}</span>
-              </div>
             </div>
 
             {/* Desktop stepper */}
