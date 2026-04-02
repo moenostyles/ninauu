@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from 'next'
-import { DM_Sans, JetBrains_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import Providers from '@/components/Providers'
 import Header from '@/components/Header'
 import SwRegister from '@/components/SwRegister'
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '700'],
-  variable: '--font-dm-sans',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
   display: 'swap',
 })
 
@@ -54,17 +54,19 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#ffffff',
+  themeColor: '#0a0a0b',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen" style={{ background: '#fafaf8' }}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body style={{ background: 'var(--bg-primary)', minHeight: '100vh' }}>
         <Providers>
           <SwRegister />
           <Header />
-          <main className="max-w-2xl mx-auto px-4 pt-3 pb-6">{children}</main>
+          <main style={{ maxWidth: '672px', margin: '0 auto', padding: '12px 16px 24px' }}>
+            {children}
+          </main>
         </Providers>
       </body>
     </html>

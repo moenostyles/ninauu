@@ -23,7 +23,6 @@ export default function Header() {
 
   useEffect(() => {
     if (!user) return
-
     const load = async () => {
       const { data } = await supabase
         .from('profiles')
@@ -36,13 +35,11 @@ export default function Header() {
       } else {
         setAvatarUrl(user.user_metadata?.avatar_url ?? null)
       }
-
       const name = data?.display_name
         ?? (user.user_metadata?.full_name as string | undefined)
         ?? user.email
       setInitials(name?.charAt(0)?.toUpperCase() ?? '?')
     }
-
     load()
 
     const channel = supabase
@@ -71,80 +68,95 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 transition-all duration-150"
       style={{
-        background: '#ffffff',
-        zIndex: 40,
-        borderBottom: scrolled ? '1px solid rgba(0,0,0,0.06)' : '1px solid transparent',
+        position: 'sticky',
+        top: 0,
+        zIndex: 'var(--z-header)' as string,
+        background: 'var(--bg-primary)',
+        borderBottom: scrolled ? '1px solid var(--border-subtle)' : '1px solid transparent',
+        transition: 'border-color var(--transition)',
       }}
     >
-      <div className="max-w-2xl mx-auto px-5 py-2 flex items-center justify-between">
-        <Link href="/" className="flex items-baseline gap-2 hover:opacity-75 transition-opacity">
-          <h1
-            className="font-bold tracking-tight"
-            style={{ fontSize: '18px', color: '#1C1C1E', letterSpacing: '-0.02em' }}
-          >
+      <div style={{ maxWidth: '672px', margin: '0 auto', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Link
+          href="/"
+          style={{ display: 'flex', alignItems: 'baseline', gap: '8px', textDecoration: 'none', opacity: 1, transition: 'opacity var(--transition)' }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.7')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          <span style={{ fontSize: 'var(--text-logo)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
             Ninauu
-          </h1>
-          <span
-            className="hidden sm:inline"
-            style={{ fontSize: '10px', color: '#8E8E93', letterSpacing: '0.06em', textTransform: 'uppercase' }}
-          >
+          </span>
+          <span className="hidden sm:inline" style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', letterSpacing: '0.04em' }}>
             Essentials, only.
           </span>
         </Link>
 
-        {user && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggle}
-              aria-label={`Switch to ${unit === 'g' ? 'oz' : 'g'}`}
-              className="flex items-center overflow-hidden transition-colors"
-              style={{
-                fontSize: '11px',
-                fontWeight: 500,
-                border: '1px solid rgba(0,0,0,0.12)',
-                borderRadius: '999px',
-              }}
-            >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* g / oz toggle */}
+          <button
+            onClick={toggle}
+            aria-label={`Switch to ${unit === 'g' ? 'oz' : 'g'}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              border: '1px solid var(--border-default)',
+              borderRadius: '999px',
+              overflow: 'hidden',
+              fontSize: 'var(--text-cat)',
+              fontWeight: 500,
+              transition: 'border-color var(--transition)',
+            }}
+          >
+            {(['g', 'oz'] as const).map((u) => (
               <span
-                className="px-2 py-0.5 transition-colors"
+                key={u}
                 style={{
-                  background: unit === 'g' ? '#1C1C1E' : 'transparent',
-                  color: unit === 'g' ? '#fff' : '#8E8E93',
+                  padding: '2px 8px',
+                  background: unit === u ? 'var(--text-primary)' : 'transparent',
+                  color: unit === u ? 'var(--bg-primary)' : 'var(--text-tertiary)',
+                  transition: 'background var(--transition), color var(--transition)',
+                  lineHeight: 1.6,
                 }}
-              >g</span>
-              <span
-                className="px-2 py-0.5 transition-colors"
-                style={{
-                  background: unit === 'oz' ? '#1C1C1E' : 'transparent',
-                  color: unit === 'oz' ? '#fff' : '#8E8E93',
-                }}
-              >oz</span>
-            </button>
-            <NotificationBell userId={user.id} />
-            <Link
-              href={`/profile/${user.id}`}
-              className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shrink-0 hover:opacity-75 transition-opacity"
-              style={{ background: '#e5e5e5' }}
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-sm font-bold" style={{ color: '#1C1C1E' }}>{initials}</span>
-              )}
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="transition-colors whitespace-nowrap"
-              style={{ fontSize: '12px', color: '#8E8E93' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#1C1C1E')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#8E8E93')}
-            >
-              Logout
-            </button>
-          </div>
-        )}
+              >{u}</span>
+            ))}
+          </button>
+
+          <NotificationBell userId={user.id} />
+
+          {/* Avatar */}
+          <Link
+            href={`/profile/${user.id}`}
+            style={{
+              width: '28px', height: '28px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              background: 'var(--bg-elevated)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+              border: '1px solid var(--border-default)',
+              transition: 'opacity var(--transition)',
+              textDecoration: 'none',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.7')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: 'var(--text-sub)', fontWeight: 600, color: 'var(--text-secondary)' }}>{initials}</span>
+            )}
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', transition: 'color var(--transition)', whiteSpace: 'nowrap', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </header>
   )

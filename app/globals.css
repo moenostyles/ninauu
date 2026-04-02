@@ -1,30 +1,87 @@
 @import "tailwindcss";
 
-/* ── Ninauu Design Tokens ── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   Ninauu Design System — Dark Mode (Industrial Minimal)
+   ui-ux-pro-max spec準拠: CSS変数一元管理 / 2フォント / 4px倍数スペーシング
+───────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Background ── */
+  --bg-primary:    #0a0a0b;
+  --bg-secondary:  #111113;
+  --bg-tertiary:   #1a1a1f;
+  --bg-elevated:   #222228;
+
+  /* ── Text ── */
+  --text-primary:   #ededef;
+  --text-secondary: #8b8b8e;
+  --text-tertiary:  #555558;
+
+  /* ── Border ── */
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong:  rgba(255, 255, 255, 0.16);
+
+  /* ── Category colors (muted for dark bg) ── */
+  --cat-shelter:  #5B9BD5;
+  --cat-pack:     #6BC77A;
+  --cat-sleep:    #9B7FCF;
+  --cat-cookware: #D4915E;
+  --cat-field:    #5BBFCF;
+  --cat-apparel:  #C49A4E;
+  --cat-others:   #6B6B6E;
+
+  /* ── Semantic ── */
+  --color-destructive: #E5484D;
+  --color-success:     #46A758;
+  --color-accent:      #ededef;
+
+  /* ── Fonts ── */
+  --font-sans: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+
+  /* ── Typography scale (11/12/13/14/18px only) ── */
+  --text-logo:    18px;
+  --text-gear:    14px;
+  --text-weight:  13px;
+  --text-sub:     12px;
+  --text-cat:     11px;
+
+  /* ── Spacing scale (4px multiples only) ── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+
+  /* ── Radii (2 values only) ── */
+  --radius-card:  8px;
+  --radius-panel: 12px;
+
+  /* ── z-index scale ── */
+  --z-header:   40;
+  --z-filter:   30;
+  --z-popover:  50;
+  --z-snackbar: 60;
+  --z-modal:    70;
+
+  /* ── Transition ── */
+  --transition: 150ms ease;
+}
+
+/* ── Tailwind @theme bridge (既存クラス互換) ── */
 @theme {
-  /* Brand */
-  --color-brand:      #FF6B35;
-  --color-brand-dark: #E85A20;
-  --color-brand-soft: #FFF0EC;
-
-  /* Ink (text / dark surfaces) */
-  --color-ink:   #1C1C1E;
-  --color-ink-2: #3D3D3D;
-  --color-ink-3: #8E8E93;
-
-  /* Fill (backgrounds) */
-  --color-fill:   #fafaf8;
-  --color-fill-2: #F2F2F2;
-
-  /* Line (borders / separators) */
-  --color-line: rgba(0, 0, 0, 0.06);
-
-  /* Surface */
-  --color-surface: #FFFFFF;
-
-  /* Fonts */
-  --font-sans: var(--font-dm-sans), 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  --color-ink:     var(--text-primary);
+  --color-ink-2:   var(--text-secondary);
+  --color-ink-3:   var(--text-tertiary);
+  --color-fill:    var(--bg-primary);
+  --color-fill-2:  var(--bg-tertiary);
+  --color-line:    var(--border-subtle);
+  --color-surface: var(--bg-secondary);
+  --color-brand:   var(--color-accent);
+  --font-sans:     var(--font-inter), 'Inter', -apple-system, sans-serif;
+  --font-mono:     var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
 }
 
 /* ── Base ── */
@@ -33,28 +90,30 @@ html {
 }
 
 body {
-  background: #fafaf8;
-  color: #1C1C1E;
-  font-family: var(--font-dm-sans), 'DM Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-gear);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Weight data — JetBrains Mono */
+/* ── Weight mono — JetBrains Mono for numbers only ── */
 .weight-mono {
-  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  font-family: var(--font-mono);
+  font-size: var(--text-weight);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
   letter-spacing: -0.02em;
 }
 
-/* Tabular numbers — weight/quantity 表示を揃える */
+/* ── Tabular nums (legacy class) ── */
 .nums {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
 
-/* Scrollbar hide */
+/* ── Scrollbar hide ── */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -63,7 +122,15 @@ body {
   display: none;
 }
 
-/* Micro-interactions */
+/* ── Focus visible ── */
+:focus-visible {
+  outline: 2px solid var(--border-strong);
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────
+   Micro-interactions (all 150ms per spec)
+───────────────────────────────────────────── */
 @keyframes scale-in {
   from { transform: scale(0); opacity: 0; }
   to   { transform: scale(1); opacity: 1; }
@@ -76,20 +143,13 @@ body {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-@keyframes count-up {
-  from { opacity: 0.4; }
-  to   { opacity: 1; }
-}
-.animate-scale-in       { animation: scale-in      0.12s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-.animate-fade-slide-in  { animation: fade-slide-in 0.2s ease-out forwards; }
-.animate-fade-in        { animation: fade-in 0.2s ease-out forwards; }
-.animate-count-up       { animation: count-up 0.3s ease-out forwards; }
+
+.animate-scale-in      { animation: scale-in      0.1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-fade-slide-in { animation: fade-slide-in 0.15s ease forwards; }
+.animate-fade-in       { animation: fade-in       0.15s ease forwards; }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-scale-in, .animate-fade-slide-in, .animate-fade-in, .animate-count-up {
+  .animate-scale-in, .animate-fade-slide-in, .animate-fade-in {
     animation: none;
   }
 }
-
-/* z-index scale */
-/* header=40, sticky-filter=30, popover=50, snackbar=60, modal=70 */

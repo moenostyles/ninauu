@@ -1,22 +1,21 @@
-// ── カテゴリ別カラーパレット（全コンポーネント共通） ────────────────
-// ドーナツチャート / スタックバー / 左ボーダーアクセント で同じ色を使う
+// ── カテゴリカラーパレット (dark mode — 彩度控えめ) ──────────────────
+// ui-ux-pro-max spec準拠: CSS変数から取得
 
 export const BIG3_COLORS = {
-  shelter: '#3B82F6',  // blue-500   — Tent & Tarp
-  pack:    '#22C55E',  // green-500  — Backpack
-  sleep:   '#A855F7',  // purple-500 — Sleep
-  others:  '#6B7280',  // gray-500   — それ以外
+  shelter: '#5B9BD5',  // --cat-shelter
+  pack:    '#6BC77A',  // --cat-pack
+  sleep:   '#9B7FCF',  // --cat-sleep
+  others:  '#6B6B6E',  // --cat-others
 } as const
 
-/** 親カテゴリ名 → hex カラー (redesign spec準拠) */
 export const PARENT_COLOR: Record<string, string> = {
-  'Tent & Tarp':         '#3B82F6',  // blue-500   — SHELTER
-  'Backpack':            '#22C55E',  // green-500  — PACK
-  'Sleep':               '#A855F7',  // purple-500 — SLEEP
-  'Tops':                '#F97316',  // orange-500
-  'Bottoms':             '#F59E0B',  // amber-500
-  'Apparel Accessories': '#EAB308',  // yellow-500
-  'Cookware':            '#F59E0B',  // amber-500  — COOKWARE
-  'Field Gear':          '#06B6D4',  // cyan-500   — FIELD GEAR
-  'Others':              '#6B7280',  // gray-500   — OTHERS
+  'Tent & Tarp':         '#5B9BD5',  // --cat-shelter
+  'Backpack':            '#6BC77A',  // --cat-pack
+  'Sleep':               '#9B7FCF',  // --cat-sleep
+  'Tops':                '#D4915E',  // --cat-cookware (warm)
+  'Bottoms':             '#C49A4E',  // --cat-apparel
+  'Apparel Accessories': '#C49A4E',  // --cat-apparel
+  'Cookware':            '#D4915E',  // --cat-cookware
+  'Field Gear':          '#5BBFCF',  // --cat-field
+  'Others':              '#6B6B6E',  // --cat-others
 }

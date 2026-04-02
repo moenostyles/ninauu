@@ -22,12 +22,12 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
   const [editingGear, setEditingGear] = useState<Gear | null>(null)
   const [collapsed,   setCollapsed]   = useState<Set<string>>(new Set())
   const [showHint,    setShowHint]    = useState(false)
-  const [swipedId,       setSwipedId]       = useState<string | null>(null)
-  const [dropdownPos,    setDropdownPos]    = useState<DropdownPos | null>(null)
-  const [pendingDelete,  setPendingDelete]  = useState<{ id: string; name: string } | null>(null)
-  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const touchStartX = useRef<number>(0)
-  const touchStartY = useRef<number>(0)
+  const [swipedId,      setSwipedId]      = useState<string | null>(null)
+  const [dropdownPos,   setDropdownPos]   = useState<DropdownPos | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null)
+  const deleteTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const touchStartX  = useRef<number>(0)
+  const touchStartY  = useRef<number>(0)
   const { fmt } = useWeightUnit()
 
   useEffect(() => {
@@ -70,11 +70,12 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     setPendingDelete(null)
   }
 
+  // Desktop "…" — smart dropup/dropdown
   const openDesktopMenu = (e: React.MouseEvent<HTMLButtonElement>, gearId: string) => {
     e.stopPropagation()
     if (dropdownPos?.gearId === gearId) { setDropdownPos(null); return }
     const rect = e.currentTarget.getBoundingClientRect()
-    const menuH = 92
+    const menuH = 88
     const spaceBelow = window.innerHeight - rect.bottom
     const top = spaceBelow >= menuH + 8 ? rect.bottom + 4 : rect.top - menuH - 4
     setDropdownPos({ gearId, top, right: window.innerWidth - rect.right })
@@ -82,8 +83,8 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
   if (gears.length === 0) {
     return (
-      <p className="text-center py-12" style={{ fontSize: '14px', color: '#8E8E93' }}>
-        No gear yet. Tap <span className="font-medium" style={{ color: '#1C1C1E' }}>+ Add</span> to start.
+      <p style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)', textAlign: 'center', padding: '48px 0' }}>
+        No gear yet. Tap <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>+ Add</span> to start.
       </p>
     )
   }
@@ -94,26 +95,21 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     .map(parent => ({ parent, items: visibleGears.filter(g => parentOf(g.category) === parent) }))
     .filter(g => g.items.length > 0)
 
-  // iOS-style grouped card rendering
-  // first card in group: rounded top corners only
-  // last card: rounded bottom corners only
-  // middle cards: no radius
-  // single card: all corners rounded
+  // iOS-style grouped card: first=top-radius, last=bottom-radius, single=all-radius
+  const cardRadius = (idx: number, total: number): string => {
+    if (total === 1) return 'var(--radius-card)'
+    if (idx === 0)   return 'var(--radius-card) var(--radius-card) 0 0'
+    if (idx === total - 1) return '0 0 var(--radius-card) var(--radius-card)'
+    return '0'
+  }
+
   const renderGearCard = (gear: Gear, idx: number, total: number) => {
     const entry       = packItems.find((e) => e.gear.id === gear.id)
     const inPack      = !!entry
     const isOpen      = swipedId === gear.id
-    const accentColor = PARENT_COLOR[parentOf(gear.category)] ?? '#9CA3AF'
-
-    const isFirst = idx === 0
-    const isLast  = idx === total - 1
-    const borderRadius = total === 1
-      ? '10px'
-      : isFirst
-      ? '10px 10px 0 0'
-      : isLast
-      ? '0 0 10px 10px'
-      : '0'
+    const accentColor = PARENT_COLOR[parentOf(gear.category)] ?? 'var(--cat-others)'
+    const radius      = cardRadius(idx, total)
+    const isLast      = idx === total - 1
 
     const onTouchStart = (e: React.TouchEvent) => {
       touchStartX.current = e.touches[0].clientX
@@ -129,29 +125,26 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     }
 
     const stepper = inPack ? (
-      <div className="flex items-center gap-1 shrink-0">
-        <button onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity - 1) }}
-          className="w-5 h-5 rounded-full flex items-center justify-center hover:opacity-70 transition-opacity"
-          style={{ background: 'rgba(0,0,0,0.06)', color: '#555', fontSize: '12px', fontWeight: 700 }}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+        <button
+          onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity - 1) }}
+          style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--bg-elevated)', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', flexShrink: 0 }}
         >−</button>
-        <span className="w-4 text-center text-xs font-semibold" style={{ color: '#1C1C1E' }}>{entry.quantity}</span>
-        <button onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity + 1) }}
-          className="w-5 h-5 rounded-full flex items-center justify-center hover:opacity-70 transition-opacity"
-          style={{ background: 'rgba(0,0,0,0.06)', color: '#555', fontSize: '12px', fontWeight: 700 }}
+        <span style={{ width: '16px', textAlign: 'center', fontSize: 'var(--text-sub)', fontWeight: 600, color: 'var(--text-primary)' }}>{entry.quantity}</span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onUpdateQuantity(gear.id, entry.quantity + 1) }}
+          style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--bg-elevated)', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', flexShrink: 0 }}
         >+</button>
       </div>
     ) : null
 
     const weight = (
-      <div className="text-right shrink-0" style={{ minWidth: '70px' }}>
-        <span
-          className="weight-mono"
-          style={{ fontSize: '14px', color: '#555', display: 'block' }}
-        >
+      <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '64px' }}>
+        <span className="weight-mono" style={{ color: 'var(--text-secondary)', display: 'block' }}>
           {inPack && entry.quantity > 1 ? fmt(gear.weight_g * entry.quantity) : fmt(gear.weight_g)}
         </span>
         {inPack && entry.quantity > 1 && (
-          <span className="weight-mono" style={{ fontSize: '10px', color: '#aaa', display: 'block', lineHeight: 1.2 }}>
+          <span className="weight-mono" style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', display: 'block', lineHeight: 1.2 }}>
             {fmt(gear.weight_g)}×{entry.quantity}
           </span>
         )}
@@ -161,135 +154,135 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     return (
       <div
         key={gear.id}
-        className={`relative overflow-hidden animate-fade-slide-in ${isOpen ? 'z-20' : ''}`}
-        style={{ touchAction: 'pan-y', borderRadius }}
+        className={`animate-fade-in ${isOpen ? '' : ''}`}
+        style={{ position: 'relative', overflow: 'hidden', borderRadius: radius, touchAction: 'pan-y', zIndex: isOpen ? 20 : 'auto' }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
         {/* Swipe action buttons (mobile) */}
         <div
-          className={`absolute right-0 top-0 bottom-0 z-20 flex items-stretch sm:hidden transition-transform duration-200 ease-out ${
-            isOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
+          className="sm:hidden"
+          style={{
+            position: 'absolute', right: 0, top: 0, bottom: 0, zIndex: 20,
+            display: 'flex', alignItems: 'stretch',
+            transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 200ms ease-out',
+          }}
           onTouchStart={e => { e.stopPropagation(); touchStartX.current = e.touches[0].clientX; touchStartY.current = e.touches[0].clientY }}
           onTouchEnd={e => e.stopPropagation()}
         >
           <button
             onTouchEnd={(e) => { e.stopPropagation(); setEditingGear(gear); setSwipedId(null) }}
-            className="w-[72px] flex flex-col items-center justify-center gap-0.5 active:brightness-90"
-            style={{ background: '#3B82F6', color: '#fff' }}
+            style={{ width: '72px', background: '#3B6BC4', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', border: 'none', cursor: 'pointer' }}
           >
-            <Pencil size={14} strokeWidth={2} />
-            <span style={{ fontSize: '11px', fontWeight: 500 }}>Edit</span>
+            <Pencil size={13} strokeWidth={2} />
+            <span style={{ fontSize: 'var(--text-cat)', fontWeight: 500 }}>Edit</span>
           </button>
           <button
             onTouchEnd={(e) => { e.stopPropagation(); handleDelete(gear.id, gear.name) }}
-            className="w-[72px] flex flex-col items-center justify-center gap-0.5 active:brightness-90"
-            style={{ background: '#EF4444', color: '#fff', borderRadius: isLast ? '0 0 10px 0' : isFirst && total === 1 ? '0 10px 10px 0' : '0' }}
+            style={{ width: '72px', background: 'var(--color-destructive)', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', border: 'none', cursor: 'pointer', borderRadius: isLast ? '0 0 var(--radius-card) 0' : '0' }}
           >
-            <X size={14} strokeWidth={2} />
-            <span style={{ fontSize: '11px', fontWeight: 500 }}>Delete</span>
+            <X size={13} strokeWidth={2} />
+            <span style={{ fontSize: 'var(--text-cat)', fontWeight: 500 }}>Delete</span>
           </button>
         </div>
 
         {/* Card body */}
         <div
-          className={`relative transition-transform duration-200 ease-out ${
-            isOpen ? '-translate-x-[144px] sm:translate-x-0' : 'translate-x-0'
-          }`}
           style={{
-            border: '1px solid rgba(0,0,0,0.06)',
-            background: inPack ? '#f7f7f5' : '#ffffff',
+            position: 'relative',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: radius,
             padding: '12px 16px',
-            borderRadius,
+            transform: isOpen ? 'translateX(-144px)' : 'translateX(0)',
+            transition: 'transform 200ms ease-out, border-color var(--transition)',
           }}
+          onMouseEnter={e => { if (!inPack) (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)' }}
+          onMouseLeave={e => { if (!inPack) (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)' }}
         >
-          {/* Category left accent (checked items) */}
+          {/* Left accent bar (checked items) */}
           {inPack && (
-            <div
-              className="absolute left-0 top-0 bottom-0"
-              style={{ width: '3px', backgroundColor: accentColor, borderRadius: `${borderRadius.split(' ')[0]} 0 0 ${borderRadius.split(' ')[borderRadius.split(' ').length - 1]}` }}
-            />
+            <div style={{
+              position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px',
+              backgroundColor: accentColor,
+              borderRadius: `${radius.split(' ')[0]} 0 0 ${radius.split(' ').slice(-1)[0]}`,
+            }} />
           )}
 
-          {/* Row 1: checkbox + name + weight + "..." */}
-          <div className="flex items-center gap-1.5 pl-1">
+          {/* Row 1: checkbox + name + weight + … */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: inPack ? '4px' : '0' }}>
 
             {/* Checkbox */}
             <button
               onClick={() => onTogglePack(gear)}
               aria-label={inPack ? 'Remove from pack' : 'Add to pack'}
-              className="flex items-center justify-center shrink-0 transition-all"
               style={{
-                width: '20px', height: '20px',
+                width: '18px', height: '18px',
                 borderRadius: '50%',
-                border: inPack ? `2px solid ${accentColor}` : '2px solid rgba(0,0,0,0.15)',
+                border: inPack ? `2px solid ${accentColor}` : '2px solid var(--border-default)',
                 background: inPack ? accentColor : 'transparent',
                 color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, cursor: 'pointer',
+                transition: 'all var(--transition)',
               }}
             >
               {inPack && (
-                <svg className="animate-scale-in" width="10" height="10" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor" strokeWidth={3}>
+                <svg className="animate-scale-in" width="9" height="9" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor" strokeWidth={3.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               )}
             </button>
 
-            {/* Gear name */}
-            <div className="flex-1 min-w-0">
-              <p
-                className="truncate leading-snug"
-                style={{ fontSize: '15px', fontWeight: 500, color: '#1C1C1E' }}
-              >
+            {/* Gear name + brand/category */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 'var(--text-gear)', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
                 {gear.name}
               </p>
-              <div className="hidden sm:flex items-center gap-1 mt-0.5">
-                {gear.brand && (
-                  <span className="truncate" style={{ fontSize: '12px', color: '#aaa' }}>{gear.brand}</span>
-                )}
-                {gear.brand && <span style={{ fontSize: '12px', color: '#ddd' }}>·</span>}
-                <span className="shrink-0" style={{ fontSize: '12px', color: '#aaa' }}>{gear.category}</span>
+              <div className="hidden sm:flex" style={{ alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                {gear.brand && <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)' }}>{gear.brand}</span>}
+                {gear.brand && <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)' }}>·</span>}
+                <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)', flexShrink: 0 }}>{gear.category}</span>
               </div>
             </div>
 
-            {/* Desktop: stepper */}
+            {/* Desktop stepper */}
             {inPack && <div className="hidden sm:flex">{stepper}</div>}
 
             {/* Weight */}
             {weight}
 
-            {/* "..." mobile: slide toggle */}
+            {/* … mobile: slide toggle */}
             <button
-              className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg active:bg-black/5 shrink-0"
-              style={{ color: '#bbb' }}
+              className="sm:hidden"
+              style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
               aria-label="More options"
               onTouchEnd={(e) => { e.stopPropagation(); setSwipedId(isOpen ? null : gear.id) }}
             >
               <MoreHorizontal size={16} strokeWidth={2} />
             </button>
 
-            {/* "..." desktop: hover-only */}
+            {/* … desktop: hover-only */}
             <button
-              className="hidden sm:flex w-8 h-8 items-center justify-center rounded-lg shrink-0 transition-all"
-              style={{ color: 'transparent' }}
+              className="hidden sm:flex"
+              style={{ width: '32px', height: '32px', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', color: 'transparent', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, transition: 'color var(--transition), background var(--transition)' }}
               aria-label="More options"
               onClick={(e) => openDesktopMenu(e, gear.id)}
-              onMouseEnter={e => (e.currentTarget.style.color = '#8E8E93')}
-              onMouseLeave={e => { if (dropdownPos?.gearId !== gear.id) e.currentTarget.style.color = 'transparent' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'var(--bg-tertiary)' }}
+              onMouseLeave={e => { if (dropdownPos?.gearId !== gear.id) { e.currentTarget.style.color = 'transparent'; e.currentTarget.style.background = 'none' } }}
             >
-              <MoreHorizontal size={18} strokeWidth={2} />
+              <MoreHorizontal size={16} strokeWidth={2} />
             </button>
           </div>
 
-          {/* Row 2 (mobile only): brand · category + stepper */}
-          <div className="flex sm:hidden items-center justify-between mt-1 pl-7">
-            <div className="flex items-center gap-1 min-w-0 flex-1">
-              {gear.brand && (
-                <span className="truncate" style={{ fontSize: '12px', color: '#aaa' }}>{gear.brand}</span>
-              )}
-              {gear.brand && <span style={{ fontSize: '12px', color: '#ddd' }}>·</span>}
-              <span className="shrink-0" style={{ fontSize: '12px', color: '#aaa' }}>{gear.category}</span>
+          {/* Row 2 (mobile): brand · category + stepper */}
+          <div className="sm:hidden" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px', paddingLeft: '26px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0 }}>
+              {gear.brand && <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gear.brand}</span>}
+              {gear.brand && <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)' }}>·</span>}
+              <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)', flexShrink: 0 }}>{gear.category}</span>
             </div>
             {stepper}
           </div>
@@ -300,22 +293,20 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
   return (
     <div>
-      {/* Swipe overlay: tap outside to close */}
+      {/* Swipe overlay */}
       {swipedId && (
         <div
-          className="fixed inset-0 z-10 sm:hidden"
+          className="sm:hidden"
+          style={{ position: 'fixed', inset: 0, zIndex: 10 }}
           onTouchStart={() => setSwipedId(null)}
         />
       )}
 
-      {/* Pack hint — first time only */}
+      {/* Pack hint */}
       {showHint && (
-        <div
-          className="flex items-center justify-between rounded-xl px-3 py-2 mb-2"
-          style={{ background: '#fafaf8', border: '1px solid rgba(0,0,0,0.06)' }}
-        >
-          <span style={{ fontSize: '12px', color: '#8E8E93' }}>○  Tap the circle to add gear to your pack</span>
-          <button onClick={dismissHint} aria-label="Dismiss hint" className="ml-2 shrink-0 hover:opacity-50 transition-opacity" style={{ color: '#8E8E93' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-card)', padding: '8px 12px', marginBottom: '8px' }}>
+          <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)' }}>○  Tap the circle to add gear to your pack</span>
+          <button onClick={dismissHint} aria-label="Dismiss hint" style={{ marginLeft: '8px', flexShrink: 0, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', padding: 0 }}>
             <X size={12} strokeWidth={2} />
           </button>
         </div>
@@ -323,7 +314,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
       <div>
         {grouped.length === 1 ? (
-          // Single group: render cards without category header, with iOS grouping
+          // Single group: no header
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
             {grouped[0].items.map((g, i) => renderGearCard(g, i, grouped[0].items.length))}
           </div>
@@ -332,55 +323,43 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             const isCollapsed  = collapsed.has(parent)
             const totalWeight  = items.reduce((s, g) => s + g.weight_g, 0)
             const checkedCount = items.filter(g => packItems.some(e => e.gear.id === g.id)).length
-            const headerColor  = PARENT_COLOR[parent] ?? '#888'
+            const headerColor  = PARENT_COLOR[parent] ?? 'var(--text-tertiary)'
 
             return (
-              <div key={parent} className="mb-1">
+              <div key={parent} style={{ marginBottom: '4px' }}>
                 {/* Category header */}
                 <button
                   onClick={() => toggleCollapse(parent)}
                   aria-expanded={!isCollapsed}
-                  className="w-full flex items-center justify-between py-1.5 px-1"
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 4px', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: headerColor }} />
-                    <span
-                      className="uppercase"
-                      style={{ fontSize: '11px', fontWeight: 600, color: '#888', letterSpacing: '0.08em' }}
-                    >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: headerColor, flexShrink: 0 }} />
+                    <span style={{ fontSize: 'var(--text-cat)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       {parent}
                     </span>
-                    <span
-                      className="rounded-full px-1.5 py-0.5"
-                      style={{ fontSize: '10px', color: '#aaa', background: 'rgba(0,0,0,0.05)' }}
-                    >
+                    <span style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', background: 'var(--bg-elevated)', borderRadius: '999px', padding: '1px 6px' }}>
                       {items.length}
                     </span>
                     {checkedCount > 0 && (
-                      <span
-                        className="rounded-full px-1.5 py-0.5"
-                        style={{ fontSize: '10px', color: '#fff', background: '#1C1C1E' }}
-                      >
+                      <span style={{ fontSize: 'var(--text-cat)', color: 'var(--bg-primary)', background: 'var(--text-primary)', borderRadius: '999px', padding: '1px 6px' }}>
                         ✓ {checkedCount}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="weight-mono" style={{ fontSize: '11px', color: '#aaa' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="weight-mono" style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)' }}>
                       {fmt(totalWeight)}
                     </span>
                     <ChevronDown
-                      size={12} strokeWidth={2.5} aria-hidden
-                      className={`transition-transform duration-150 ${isCollapsed ? '' : 'rotate-180'}`}
-                      style={{ color: '#aaa' }}
+                      size={11} strokeWidth={2.5} aria-hidden
+                      style={{ color: 'var(--text-tertiary)', transition: 'transform var(--transition)', transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}
                     />
                   </div>
                 </button>
 
-                {/* Cards — iOS grouped list style */}
-                <div className={`overflow-hidden transition-all duration-200 ease-in-out ${
-                  isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[9999px] opacity-100'
-                }`}>
+                {/* Cards */}
+                <div style={{ overflow: 'hidden', transition: 'all 200ms ease-in-out', maxHeight: isCollapsed ? 0 : '9999px', opacity: isCollapsed ? 0 : 1 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', paddingBottom: '4px' }}>
                     {items.map((g, i) => renderGearCard(g, i, items.length))}
                   </div>
@@ -391,25 +370,27 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         )}
       </div>
 
-      {/* Desktop dropdown: z-40 overlay + z-50 dropdown */}
+      {/* Desktop popover — z-40 overlay + z-50 dropdown */}
       {dropdownPos && (
         <>
           <div
-            className="fixed inset-0 hidden sm:block"
-            style={{ zIndex: 40 }}
+            className="hidden sm:block"
+            style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-filter)' as string }}
             onClick={() => setDropdownPos(null)}
           />
           <div
-            className="fixed overflow-hidden py-0.5"
             style={{
+              position: 'fixed',
               top: dropdownPos.top,
               right: dropdownPos.right,
-              zIndex: 50,
-              background: '#fff',
-              border: '1px solid rgba(0,0,0,0.08)',
-              borderRadius: '10px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              width: '128px',
+              zIndex: 'var(--z-popover)' as string,
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-card)',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+              overflow: 'hidden',
+              padding: '2px 0',
+              width: '120px',
             }}
           >
             <button
@@ -418,10 +399,11 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
                 if (gear) setEditingGear(gear)
                 setDropdownPos(null)
               }}
-              className="w-full flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-[#fafaf8]"
-              style={{ fontSize: '14px', color: '#1C1C1E' }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', fontSize: 'var(--text-weight)', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', transition: 'background var(--transition)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
-              <Pencil size={13} strokeWidth={2} style={{ color: '#8E8E93', flexShrink: 0 }} />
+              <Pencil size={12} strokeWidth={2} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
               Edit
             </button>
             <button
@@ -429,10 +411,11 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
                 const g = gears.find(g => g.id === dropdownPos.gearId)
                 handleDelete(dropdownPos.gearId, g?.name ?? '')
               }}
-              className="w-full flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-red-50"
-              style={{ fontSize: '14px', color: '#EF4444' }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', fontSize: 'var(--text-weight)', color: 'var(--color-destructive)', background: 'none', border: 'none', cursor: 'pointer', transition: 'background var(--transition)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(229,72,77,0.08)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
-              <X size={13} strokeWidth={2} style={{ flexShrink: 0 }} />
+              <X size={12} strokeWidth={2} style={{ flexShrink: 0 }} />
               Delete
             </button>
           </div>
@@ -447,28 +430,37 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         />
       )}
 
-      {/* Delete Undo toast */}
+      {/* Delete Undo snackbar */}
       {pendingDelete && (
         <div
-          className="fixed left-1/2 -translate-x-1/2 flex items-center gap-3 animate-fade-slide-in"
+          className="animate-fade-slide-in"
           style={{
+            position: 'fixed',
             bottom: '24px',
-            zIndex: 60,
-            background: '#1a1a1a',
-            color: '#fff',
-            fontSize: '14px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 'var(--z-snackbar)' as string,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-default)',
+            color: 'var(--text-primary)',
+            fontSize: 'var(--text-weight)',
             padding: '12px 20px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            borderRadius: 'var(--radius-card)',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+            whiteSpace: 'nowrap',
           }}
         >
-          <span className="truncate opacity-80" style={{ maxWidth: '180px' }}>
+          <span style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
             &ldquo;{pendingDelete.name}&rdquo; deleted
           </span>
           <button
             onClick={handleUndoDelete}
-            className="shrink-0 font-semibold hover:opacity-80 transition-opacity"
-            style={{ color: '#FF6B35' }}
+            style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'underline', textUnderlineOffset: '2px', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: 0, transition: 'opacity var(--transition)' }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.7')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
           >
             Undo
           </button>

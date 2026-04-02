@@ -22,6 +22,13 @@ type Tab = 'gear' | 'trips' | 'explore'
 
 const BIG3_CATEGORIES = ['Tent', 'Backpack', 'Sleeping Bag']
 
+const SORT_OPTIONS = [
+  { key: 'date',        label: 'Latest'        },
+  { key: 'name',        label: 'Name'          },
+  { key: 'weight_asc',  label: 'Light → Heavy' },
+  { key: 'weight_desc', label: 'Heavy → Light' },
+] as const
+
 export default function Home() {
   const { user, loading: authLoading } = useAuth()
   const [gears, setGears] = useState<Gear[]>([])
@@ -40,14 +47,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [gearInitialName, setGearInitialName] = useState('')
 
-  // ── Onboarding ──
-  // localStorage を初回レンダー時に同期読み取り（useEffect 不要）
   const [onboardingSkipped, setOnboardingSkipped] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
     return !!localStorage.getItem('ninauu_onboarding_v2')
   })
 
-  // ソートメニュー外クリックで閉じる
   useEffect(() => {
     if (!showSortMenu) return
     const close = (e: MouseEvent) => {
@@ -64,14 +68,10 @@ export default function Home() {
     setOnboardingSkipped(true)
   }
 
-  // Big3 達成状況 — gears から毎レンダー純粋に導出（state 管理しない）
   const registeredBig3 = new Set(
     gears.map((g) => g.category).filter((c) => BIG3_CATEGORIES.includes(c))
   )
   const allBig3Done = BIG3_CATEGORIES.every((c) => registeredBig3.has(c))
-
-  // 表示条件: Skip未実施 AND ロード完了 AND Big3未完了 AND Gearタブ
-  // ※ addMode の値に依存しない（検索パネルと同時表示する）
   const showOnboarding = !onboardingSkipped && !loading && !allBig3Done && activeTab === 'gear'
 
   const fetchGears = useCallback(async () => {
@@ -95,9 +95,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!user) return
-    fetchGears()
-    fetchTrips()
-    fetchSavedPacks()
+    fetchGears(); fetchTrips(); fetchSavedPacks()
   }, [user, fetchGears, fetchTrips, fetchSavedPacks])
 
   const togglePackItem = (gear: Gear) => {
@@ -141,10 +139,7 @@ export default function Home() {
       }
     })
     setPackItems(entries)
-    // Reset filters so all selected gear is visible
-    setFilterParent('All')
-    setFilterChild('All')
-    setActiveTab('gear')
+    setFilterParent('All'); setFilterChild('All'); setActiveTab('gear')
   }
 
   const handleDeleteSavedPack = async (packId: string) => {
@@ -159,14 +154,13 @@ export default function Home() {
       return parentOf(g.category) === filterParent
     })
     .sort((a, b) => {
-      if (sortBy === 'name')         return a.name.localeCompare(b.name)
-      if (sortBy === 'weight_asc')   return a.weight_g - b.weight_g
-      if (sortBy === 'weight_desc')  return b.weight_g - a.weight_g
+      if (sortBy === 'name')        return a.name.localeCompare(b.name)
+      if (sortBy === 'weight_asc')  return a.weight_g - b.weight_g
+      if (sortBy === 'weight_desc') return b.weight_g - a.weight_g
       return 0
     })
-  const packGearCount = packItems.reduce((s, e) => s + e.quantity, 0)
 
-  // ── Tab config ──
+  const packGearCount = packItems.reduce((s, e) => s + e.quantity, 0)
   const tabs: { key: Tab; label: string; badge?: number }[] = [
     { key: 'gear',    label: 'Gear',    badge: packGearCount || undefined },
     { key: 'trips',   label: 'Trips',   badge: trips.length || undefined },
@@ -174,16 +168,27 @@ export default function Home() {
   ]
 
   if (authLoading) {
-    return <div className="flex items-center justify-center py-32"><p className="text-ink-3 text-sm">Loading...</p></div>
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
+        <p style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)' }}>Loading…</p>
+      </div>
+    )
   }
-  if (!user) {
-    return <AuthScreen />
-  }
+  if (!user) return <AuthScreen />
+
+  const currentSortLabel = SORT_OPTIONS.find(o => o.key === sortBy)?.label ?? 'Latest'
 
   return (
     <div>
-      {/* ── Segmented Tab Control ── */}
-      <div className="bg-[#F2F2F7] rounded-2xl p-1 flex mb-5">
+      {/* ── Tab control ── */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '0',
+          marginBottom: '20px',
+          borderBottom: '1px solid var(--border-subtle)',
+        }}
+      >
         {tabs.map(({ key, label, badge }) => (
           <button
             key={key}
@@ -192,17 +197,45 @@ export default function Home() {
               if (key === 'gear') setAddMode(null)
               if (key === 'trips') setShowTripForm(false)
             }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
-              activeTab === key
-                ? 'bg-ink text-surface shadow-md'
-                : 'text-ink-3 hover:text-ink'
-            }`}
+            style={{
+              padding: '10px 16px',
+              fontSize: 'var(--text-weight)',
+              fontWeight: activeTab === key ? 600 : 400,
+              color: activeTab === key ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              borderBottom: activeTab === key ? '2px solid var(--text-primary)' : '2px solid transparent',
+              marginBottom: '-1px',
+              background: 'none',
+              border: 'none',
+              borderBottomStyle: 'solid',
+              borderBottomWidth: '2px',
+              borderBottomColor: activeTab === key ? 'var(--text-primary)' : 'transparent',
+              cursor: 'pointer',
+              transition: 'color var(--transition)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={e => { if (activeTab !== key) e.currentTarget.style.color = 'var(--text-secondary)' }}
+            onMouseLeave={e => { if (activeTab !== key) e.currentTarget.style.color = 'var(--text-tertiary)' }}
           >
             {label}
             {badge ? (
-              <span className={`text-xs font-semibold rounded-full w-4 h-4 flex items-center justify-center leading-none ${
-                activeTab === key ? 'bg-surface text-ink' : 'bg-fill-2 text-ink-3'
-              }`}>
+              <span
+                style={{
+                  fontSize: 'var(--text-cat)',
+                  fontWeight: 600,
+                  borderRadius: '999px',
+                  width: '16px',
+                  height: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1,
+                  background: activeTab === key ? 'var(--text-primary)' : 'var(--bg-tertiary)',
+                  color: activeTab === key ? 'var(--bg-primary)' : 'var(--text-secondary)',
+                }}
+              >
                 {badge > 9 ? '9+' : badge}
               </span>
             ) : null}
@@ -210,122 +243,187 @@ export default function Home() {
         ))}
       </div>
 
-      {/* ── Gear List ── */}
+      {/* ── Gear tab ── */}
       {activeTab === 'gear' && (
         <div>
-          {/* Category chips + Add button */}
-          <div className="flex flex-col gap-2 mb-4">
-            <div className="flex items-center gap-3">
-              {/* Parent chips — horizontal scroll */}
-              <div className="relative flex-1 overflow-hidden">
-                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
-                  {['All', ...PARENT_CATEGORIES].map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => { setFilterParent(p); setFilterChild('All') }}
-                      className={`px-3 py-1 text-xs rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
-                        filterParent === p
-                          ? 'bg-ink text-surface border-ink shadow-sm'
-                          : 'bg-surface text-ink border-line hover:border-ink hover:bg-fill'
-                      }`}
-                    >
-                      {p === 'Apparel Accessories' ? 'Apparel Acc.' : p}
-                    </button>
-                  ))}
+          {/* Filter row */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* Parent filter chips */}
+              <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+                <div className="scrollbar-hide" style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '2px' }}>
+                  {['All', ...PARENT_CATEGORIES].map((p) => {
+                    const active = filterParent === p
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => { setFilterParent(p); setFilterChild('All') }}
+                        style={{
+                          padding: '4px 12px',
+                          fontSize: 'var(--text-cat)',
+                          fontWeight: active ? 600 : 400,
+                          borderRadius: '999px',
+                          border: active ? '1px solid var(--border-strong)' : '1px solid var(--border-subtle)',
+                          background: active ? 'var(--bg-elevated)' : 'transparent',
+                          color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                          transition: 'all var(--transition)',
+                        }}
+                        onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--text-primary)' }}
+                        onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--text-secondary)' }}
+                      >
+                        {p === 'Apparel Accessories' ? 'Apparel Acc.' : p}
+                      </button>
+                    )
+                  })}
                 </div>
-                <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-fill to-transparent" />
+                <div style={{ pointerEvents: 'none', position: 'absolute', inset: '0 0 0 auto', width: '24px', background: 'linear-gradient(to left, var(--bg-primary), transparent)' }} />
               </div>
+
+              {/* + Add button (desktop) */}
               <button
                 onClick={() => { setAddMode((p) => (p ? null : 'search')); setGearInitialName(''); setSearchInitialQuery('') }}
-                className="hidden sm:flex shrink-0 items-center gap-1.5 px-4 py-2 bg-ink text-surface text-sm font-medium rounded-xl hover:bg-ink-2 transition-colors"
+                className="hidden sm:flex"
+                style={{
+                  flexShrink: 0,
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 12px',
+                  background: 'var(--color-accent)',
+                  color: 'var(--bg-primary)',
+                  border: 'none',
+                  borderRadius: '999px',
+                  fontSize: 'var(--text-weight)',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'opacity var(--transition)',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >
-                {addMode ? 'Cancel' : <><Plus size={15} strokeWidth={2.5} />Add</>}
+                {addMode ? <X size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
+                {addMode ? 'Cancel' : 'Add'}
               </button>
             </div>
-            {/* Child chips — 親より一段下のスタイル */}
+
+            {/* Child chips */}
             {filterParent !== 'All' && (
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5 pl-4">
-                {['All', ...(CATEGORY_TREE[filterParent] ?? [])].map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setFilterChild(c)}
-                    className={`px-2.5 py-0.5 text-[11px] rounded-full border transition-colors whitespace-nowrap shrink-0 ${
-                      filterChild === c
-                        ? 'bg-ink-2 text-surface border-ink-2 font-medium'
-                        : 'bg-surface text-ink-3 border-line hover:border-ink-3 hover:bg-fill'
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
+              <div className="scrollbar-hide" style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '2px', paddingLeft: '8px' }}>
+                {['All', ...(CATEGORY_TREE[filterParent] ?? [])].map((c) => {
+                  const active = filterChild === c
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setFilterChild(c)}
+                      style={{
+                        padding: '2px 10px',
+                        fontSize: 'var(--text-cat)',
+                        fontWeight: active ? 600 : 400,
+                        borderRadius: '999px',
+                        border: active ? '1px solid var(--border-default)' : '1px solid var(--border-subtle)',
+                        background: active ? 'var(--bg-tertiary)' : 'transparent',
+                        color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        transition: 'all var(--transition)',
+                      }}
+                    >
+                      {c}
+                    </button>
+                  )
+                })}
               </div>
             )}
 
-            {/* Sort dropdown */}
-            {(() => {
-              const SORT_OPTIONS = [
-                { key: 'date',        label: 'Latest'        },
-                { key: 'name',        label: 'Name'          },
-                { key: 'weight_asc',  label: 'Light → Heavy' },
-                { key: 'weight_desc', label: 'Heavy → Light' },
-              ] as const
-              const currentLabel = SORT_OPTIONS.find(o => o.key === sortBy)?.label ?? 'Latest'
-              return (
-                <div ref={sortMenuRef} className="relative self-start">
-                  <button
-                    onClick={() => setShowSortMenu(p => !p)}
-                    className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-full border border-line bg-surface text-ink-3 hover:border-ink hover:bg-fill transition-colors whitespace-nowrap"
-                  >
-                    <span className="text-[10px] uppercase tracking-wider text-ink-3">Sort</span>
-                    <span className="font-medium text-ink">{currentLabel}</span>
-                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className={`transition-transform duration-150 ${showSortMenu ? 'rotate-180' : ''}`}>
-                      <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                  {showSortMenu && (
-                    <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-line rounded-xl shadow-lg overflow-hidden py-0.5 w-36">
-                      {SORT_OPTIONS.map(({ key, label }) => (
-                        <button
-                          key={key}
-                          onClick={() => { setSortBy(key); setShowSortMenu(false) }}
-                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                            sortBy === key
-                              ? 'font-semibold text-ink bg-fill'
-                              : 'text-ink-2 hover:bg-fill'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+            {/* Sort */}
+            <div ref={sortMenuRef} style={{ position: 'relative', alignSelf: 'flex-start' }}>
+              <button
+                onClick={() => setShowSortMenu(p => !p)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 10px',
+                  background: 'transparent',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '999px',
+                  cursor: 'pointer',
+                  transition: 'border-color var(--transition)',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-default)')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
+              >
+                <span style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sort</span>
+                <span style={{ fontSize: 'var(--text-cat)', color: 'var(--text-secondary)', fontWeight: 500 }}>{currentSortLabel}</span>
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ transition: `transform var(--transition)`, transform: showSortMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  <path d="M1 2.5L4 5.5L7 2.5" stroke="var(--text-tertiary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+
+              {showSortMenu && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 'calc(100% + 4px)',
+                    zIndex: 'var(--z-popover)' as string,
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-card)',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+                    overflow: 'hidden',
+                    padding: '2px 0',
+                    width: '144px',
+                  }}
+                >
+                  {SORT_OPTIONS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => { setSortBy(key); setShowSortMenu(false) }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '8px 12px',
+                        fontSize: 'var(--text-weight)',
+                        fontWeight: sortBy === key ? 600 : 400,
+                        color: sortBy === key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        background: sortBy === key ? 'var(--bg-tertiary)' : 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'background var(--transition)',
+                        display: 'block',
+                      }}
+                      onMouseEnter={e => { if (sortBy !== key) e.currentTarget.style.background = 'var(--bg-tertiary)' }}
+                      onMouseLeave={e => { if (sortBy !== key) e.currentTarget.style.background = 'transparent' }}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
-              )
-            })()}
+              )}
+            </div>
           </div>
 
-          {/* Onboarding — Big3未完了かつSkip未実施のユーザーのみ */}
-          {/* addMode に依存しない：検索パネルと同時表示してプログレスを常に見せる */}
+          {/* Onboarding */}
           {showOnboarding && (
             <Onboarding
               registeredCategories={registeredBig3}
               onAdd={(query) => {
-                setSearchInitialQuery(query)
-                setGearInitialName('')
-                setAddMode('search')
+                setSearchInitialQuery(query); setGearInitialName(''); setAddMode('search')
               }}
               onSkip={skipOnboarding}
             />
           )}
 
           {addMode === 'search' && (
-            <div className="mb-4">
+            <div style={{ marginBottom: '16px' }}>
               <GearSearchFromDB
                 key={searchInitialQuery}
                 initialQuery={searchInitialQuery}
                 onSuccess={() => {
-                  // オンボーディングから開いた場合（searchInitialQuery がセットされている）は
-                  // 追加後にパネルを閉じてプログレスを確認できるようにする
                   if (searchInitialQuery) setAddMode(null)
                   setSearchInitialQuery('')
                   fetchGears()
@@ -335,7 +433,7 @@ export default function Home() {
             </div>
           )}
           {addMode === 'manual' && (
-            <div className="mb-4">
+            <div style={{ marginBottom: '16px' }}>
               <GearForm onSuccess={() => { setAddMode(null); fetchGears() }} initialName={gearInitialName} />
             </div>
           )}
@@ -352,7 +450,7 @@ export default function Home() {
           />
 
           {loading ? (
-            <p className="text-ink-3 text-sm py-12 text-center">Loading…</p>
+            <p style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)', textAlign: 'center', padding: '48px 0' }}>Loading…</p>
           ) : (
             <GearList
               gears={filteredGears}
@@ -369,27 +467,60 @@ export default function Home() {
       {activeTab === 'gear' && (
         <button
           onClick={() => { setAddMode((p) => (p ? null : 'search')); setGearInitialName(''); setSearchInitialQuery('') }}
-          className="sm:hidden fixed bottom-6 right-6 z-40 w-14 h-14 bg-ink text-surface rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95"
+          className="sm:hidden"
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 'var(--z-popover)' as string,
+            width: '52px',
+            height: '52px',
+            background: 'var(--color-accent)',
+            color: 'var(--bg-primary)',
+            border: 'none',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            transition: 'transform var(--transition)',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
         >
-          {addMode
-            ? <X size={20} strokeWidth={2.5} />
-            : <Plus size={22} strokeWidth={2.5} />}
+          {addMode ? <X size={20} strokeWidth={2.5} /> : <Plus size={20} strokeWidth={2.5} />}
         </button>
       )}
 
-      {/* ── Trips ── */}
+      {/* ── Trips tab ── */}
       {activeTab === 'trips' && (
         <div>
-          <div className="flex justify-end mb-4">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
             <button
               onClick={() => setShowTripForm((p) => !p)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-ink text-surface text-sm font-medium rounded-xl hover:bg-ink-2 transition-colors"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 16px',
+                background: 'var(--color-accent)',
+                color: 'var(--bg-primary)',
+                border: 'none',
+                borderRadius: 'var(--radius-card)',
+                fontSize: 'var(--text-weight)',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'opacity var(--transition)',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
             >
-              {showTripForm ? 'Cancel' : <><Plus size={15} strokeWidth={2.5} />New Trip</>}
+              {showTripForm ? 'Cancel' : <><Plus size={13} strokeWidth={2.5} />New Trip</>}
             </button>
           </div>
           {showTripForm && (
-            <div className="mb-4">
+            <div style={{ marginBottom: '16px' }}>
               <TripForm packItems={packItems.map((e) => e.gear)} onSuccess={() => { setShowTripForm(false); fetchTrips() }} />
             </div>
           )}
@@ -397,7 +528,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Explore ── */}
+      {/* ── Explore tab ── */}
       {activeTab === 'explore' && (
         <ExploreTab currentUserId={user.id} />
       )}

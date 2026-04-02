@@ -34,63 +34,80 @@ export default function AuthScreen() {
     })
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    height: '44px',
+    background: 'var(--bg-tertiary)',
+    border: '1px solid var(--border-default)',
+    borderRadius: 'var(--radius-card)',
+    padding: '0 12px',
+    fontSize: 'var(--text-gear)',
+    color: 'var(--text-primary)',
+    outline: 'none',
+    transition: 'border-color var(--transition)',
+    boxSizing: 'border-box',
+  }
+
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center px-5 z-50"
       style={{
-        background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+        position: 'fixed',
+        inset: 0,
+        background: 'var(--bg-primary)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+        zIndex: 'var(--z-modal)' as string,
       }}
     >
-      {/* Background texture overlay */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
-
-      <div
-        className="relative w-full animate-fade-in"
-        style={{ maxWidth: '400px' }}
+        className="animate-fade-in"
+        style={{ width: '100%', maxWidth: '380px' }}
       >
-        {/* Login Card */}
+        {/* Card */}
         <div
-          className="bg-white px-8 py-8"
-          style={{ borderRadius: '16px' }}
+          style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-panel)',
+            padding: '32px',
+          }}
         >
           {/* Wordmark */}
-          <div className="text-center mb-7">
-            <p
-              className="font-bold tracking-tight"
-              style={{ fontSize: '28px', letterSpacing: '-0.03em', color: '#1C1C1E' }}
-            >
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <p style={{ fontSize: 'var(--text-logo)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
               Ninauu
             </p>
-            <p
-              className="mt-1 uppercase font-normal"
-              style={{ fontSize: '12px', letterSpacing: '0.1em', color: '#888' }}
-            >
+            <p style={{ marginTop: '4px', fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Essentials, only.
             </p>
           </div>
 
-          {/* Google CTA — primary action */}
+          {/* Google CTA — 最も目立つ白ボタン */}
           <button
             type="button"
             onClick={handleGoogle}
-            className="w-full flex items-center justify-center gap-2.5 transition-colors"
             style={{
-              height: '48px',
-              background: '#1C1C1E',
-              color: '#fff',
-              borderRadius: '10px',
-              fontSize: '14px',
+              width: '100%',
+              height: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              background: 'var(--color-accent)',
+              color: 'var(--bg-primary)',
+              border: 'none',
+              borderRadius: 'var(--radius-card)',
+              fontSize: 'var(--text-weight)',
               fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'opacity var(--transition)',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#3D3D3D')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#1C1C1E')}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
           >
-            <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 24 24" width="15" height="15" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -100,25 +117,33 @@ export default function AuthScreen() {
           </button>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
-            <span style={{ fontSize: '12px', color: '#aaa' }}>or</span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
+            <span style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)' }}>or</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
           </div>
 
-          {/* Sign In / Sign Up tab toggle — underline style */}
-          <div className="flex mb-5" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+          {/* Sign In / Sign Up tab — underline style */}
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', marginBottom: '16px' }}>
             {(['signin', 'signup'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => { setMode(m); setError(''); setMessage('') }}
-                className="flex-1 py-2 transition-colors"
                 style={{
-                  fontSize: '13px',
+                  flex: 1,
+                  padding: '8px 0',
+                  fontSize: 'var(--text-weight)',
                   fontWeight: mode === m ? 600 : 400,
-                  color: mode === m ? '#1C1C1E' : '#aaa',
-                  borderBottom: mode === m ? '2px solid #1C1C1E' : '2px solid transparent',
+                  color: mode === m ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  borderBottom: mode === m ? '2px solid var(--text-primary)' : '2px solid transparent',
                   marginBottom: '-1px',
+                  background: 'none',
+                  border: 'none',
+                  borderBottomStyle: 'solid',
+                  borderBottomWidth: '2px',
+                  borderBottomColor: mode === m ? 'var(--text-primary)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'color var(--transition)',
                 }}
               >
                 {m === 'signin' ? 'Sign In' : 'Sign Up'}
@@ -126,26 +151,17 @@ export default function AuthScreen() {
             ))}
           </div>
 
-          {/* Email/Password form */}
-          <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Form */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
               required
-              className="w-full focus:outline-none transition-colors"
-              style={{
-                height: '44px',
-                border: '1px solid rgba(0,0,0,0.12)',
-                borderRadius: '8px',
-                padding: '0 12px',
-                fontSize: '14px',
-                color: '#1C1C1E',
-                background: '#fafaf8',
-              }}
-              onFocus={e => (e.currentTarget.style.borderColor = '#1C1C1E')}
-              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)')}
+              style={inputStyle}
+              onFocus={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-default)')}
             />
             <input
               type="password"
@@ -153,47 +169,44 @@ export default function AuthScreen() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
               required
-              className="w-full focus:outline-none transition-colors"
-              style={{
-                height: '44px',
-                border: '1px solid rgba(0,0,0,0.12)',
-                borderRadius: '8px',
-                padding: '0 12px',
-                fontSize: '14px',
-                color: '#1C1C1E',
-                background: '#fafaf8',
-              }}
-              onFocus={e => (e.currentTarget.style.borderColor = '#1C1C1E')}
-              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)')}
+              style={inputStyle}
+              onFocus={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-default)')}
             />
 
-            {error && <p style={{ color: '#ef4444', fontSize: '12px', paddingLeft: '2px' }}>{error}</p>}
-            {message && <p style={{ color: '#22c55e', fontSize: '12px', paddingLeft: '2px' }}>{message}</p>}
+            {error && (
+              <p style={{ fontSize: 'var(--text-sub)', color: 'var(--color-destructive)', paddingLeft: '2px' }}>{error}</p>
+            )}
+            {message && (
+              <p style={{ fontSize: 'var(--text-sub)', color: 'var(--color-success)', paddingLeft: '2px' }}>{message}</p>
+            )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full transition-colors disabled:opacity-40"
               style={{
+                width: '100%',
                 height: '44px',
-                background: '#FF6B35',
-                color: '#fff',
-                borderRadius: '8px',
-                fontSize: '14px',
+                marginTop: '4px',
+                background: 'var(--bg-elevated)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-card)',
+                fontSize: 'var(--text-weight)',
                 fontWeight: 500,
+                cursor: loading ? 'default' : 'pointer',
+                opacity: loading ? 0.5 : 1,
+                transition: 'opacity var(--transition), border-color var(--transition)',
               }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#E85A20' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#FF6B35' }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.borderColor = 'var(--border-strong)' }}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-default)')}
             >
               {loading ? '…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
             </button>
           </form>
 
           {/* Tagline */}
-          <p
-            className="text-center mt-5"
-            style={{ fontSize: '11px', color: '#bbb', letterSpacing: '0.02em' }}
-          >
+          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', letterSpacing: '0.02em' }}>
             Track your gear · Build packing lists · 900+ gear database
           </p>
         </div>
