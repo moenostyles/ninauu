@@ -194,7 +194,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             background: 'var(--bg-primary)',
             border: '1px solid var(--border-default)',
             borderRadius: radius,
-            padding: '12px 16px',
+            padding: '8px 12px',
             transform: isOpen ? 'translateX(-144px)' : 'translateX(0)',
             transition: 'transform 200ms ease-out, border-color var(--transition)',
             boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -212,7 +212,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
           )}
 
           {/* Row 1: checkbox + name + weight + … */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: inPack ? '4px' : '0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: inPack ? '4px' : '0' }}>
 
             {/* Checkbox */}
             <button
@@ -268,14 +268,11 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             </button>
           </div>
 
-          {/* Row 2 (mobile): brand · category + stepper */}
-          <div className="sm:hidden" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px', paddingLeft: '26px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0 }}>
-              {gear.brand && <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gear.brand}</span>}
-              {gear.brand && <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)' }}>·</span>}
-              <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)', flexShrink: 0 }}>{gear.category}</span>
-            </div>
-            {stepper}
+          {/* Row 2 (mobile): brand · category */}
+          <div className="sm:hidden" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px', paddingLeft: '26px' }}>
+            {gear.brand && <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gear.brand}</span>}
+            {gear.brand && <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)' }}>·</span>}
+            <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)', flexShrink: 0 }}>{gear.category}</span>
           </div>
         </div>
       </div>
@@ -306,7 +303,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
       <div>
         {grouped.length === 1 ? (
           // Single group: no header
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {grouped[0].items.map((g, i) => renderGearCard(g, i, grouped[0].items.length))}
           </div>
         ) : (
@@ -351,7 +348,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
                 {/* Cards */}
                 <div style={{ overflow: 'hidden', transition: 'all 200ms ease-in-out', maxHeight: isCollapsed ? 0 : '9999px', opacity: isCollapsed ? 0 : 1 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', paddingBottom: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingBottom: '4px' }}>
                     {items.map((g, i) => renderGearCard(g, i, items.length))}
                   </div>
                 </div>

@@ -101,7 +101,7 @@ export default function TripList({ trips, onRefresh, onNewTrip }: Props) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {trips.map((trip) => {
         const isExpanded = expandedId === trip.id
         const items = itemsCache[trip.id] ?? []
@@ -113,7 +113,7 @@ export default function TripList({ trips, onRefresh, onNewTrip }: Props) {
           >
             {/* Summary row */}
             <div
-              className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-secondary transition-colors"
+              className="px-3 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-secondary transition-colors"
               onClick={() => handleExpand(trip.id)}
             >
               <div className="flex-1 min-w-0">

@@ -320,14 +320,14 @@ export default function ExploreTab({ currentUserId }: Props) {
       </div>
 
       {searchQuery.trim() && (
-        <div className="mb-4 space-y-1">
+        <div className="mb-4 space-y-3">
           {searching ? (
             <p className="text-xs text-ink-3 px-1">Searching…</p>
           ) : searchResults.length === 0 ? (
             <p className="text-xs text-ink-3 px-1">No users found.</p>
           ) : (
             searchResults.map((u) => (
-              <div key={u.id} className="bg-white border border-line rounded-xl px-4 py-3 flex items-center gap-3">
+              <div key={u.id} className="bg-white border border-line rounded-xl px-3 py-2.5 flex items-center gap-3">
                 <Link href={`/profile/${u.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-70 transition-opacity">
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-tertiary flex items-center justify-center shrink-0">
                     {u.avatar_url ? (
@@ -396,13 +396,13 @@ export default function ExploreTab({ currentUserId }: Props) {
         </div>
       ) : (
         <>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {allItems.map((item) => (
               <div key={`${item.type}-${item.id}`} className="bg-white border border-line rounded-xl shadow-sm overflow-hidden">
                 {item.type === 'pack' ? (
                   <div>
                     <div
-                      className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-fill transition-colors"
+                      className="px-3 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-fill transition-colors"
                       onClick={() => handleExpandPack(item.id)}
                     >
                       <div className="flex-1 min-w-0">
@@ -446,7 +446,7 @@ export default function ExploreTab({ currentUserId }: Props) {
                     )}
                   </div>
                 ) : (
-                  <div className="px-4 py-3 flex items-center gap-3">
+                  <div className="px-3 py-2.5 flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs px-2 py-0.5 rounded-full bg-fill-2 text-ink-3 font-medium">Trip</span>
