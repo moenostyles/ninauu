@@ -3,11 +3,26 @@
 import { supabase } from '@/lib/supabase'
 
 export default function AuthScreen() {
-  const handleGoogle = async () => {
+  const handleOAuth = async (provider: 'google' | 'apple') => {
     await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider,
       options: { redirectTo: window.location.origin },
     })
+  }
+
+  const buttonStyle: React.CSSProperties = {
+    width: '100%',
+    height: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    border: 'none',
+    borderRadius: 'var(--radius-card)',
+    fontSize: 'var(--text-weight)',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'opacity var(--transition)',
   }
 
   return (
@@ -55,22 +70,12 @@ export default function AuthScreen() {
           {/* Google CTA */}
           <button
             type="button"
-            onClick={handleGoogle}
+            onClick={() => handleOAuth('google')}
             style={{
-              width: '100%',
-              height: '44px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
+              ...buttonStyle,
               background: 'var(--color-accent)',
               color: 'var(--bg-primary)',
-              border: 'none',
-              borderRadius: 'var(--radius-card)',
-              fontSize: 'var(--text-weight)',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'opacity var(--transition)',
+              marginBottom: '8px',
             }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
@@ -84,9 +89,29 @@ export default function AuthScreen() {
             Continue with Google
           </button>
 
+          {/* Apple CTA */}
+          <button
+            type="button"
+            onClick={() => handleOAuth('apple')}
+            style={{
+              ...buttonStyle,
+              background: 'var(--text-primary)',
+              color: 'var(--bg-primary)',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }} fill="currentColor">
+              <path d="M17.05 13.5c-.91 2.92.37 5.65 2.85 6.75.56.3 1.14.5 1.73.58.12-1.2.08-2.4-.1-3.57-.37-2.6-1.38-5.08-3.48-6.76z"/>
+              <path d="M12.08 5.22c.65-.75 1.48-1.32 2.4-1.62 2.4-.78 5.12-.2 6.56 1.89 1.44 2.09 1.01 5.18-1.04 6.71-1.54 1.09-3.50 1.08-5.04.02-1.54-1.06-2.36-3.06-1.88-5z"/>
+              <path d="M6.3 7.75c1.23 1.74 1.48 4.09.57 6.15-.91 2.06-2.93 3.35-5.15 3.35-2.22 0-4.24-1.29-5.15-3.35C-4.26 11.84-3.99 9.49-2.76 7.75"/>
+            </svg>
+            Continue with Apple
+          </button>
+
           {/* Footer */}
           <p style={{ textAlign: 'center', marginTop: '24px', fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', letterSpacing: '0.02em' }}>
-            Sign in with your Google account
+            Sign in with your account
           </p>
         </div>
       </div>
