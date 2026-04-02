@@ -189,15 +189,12 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
         {/* Card body */}
         <div
+          className="bg-white border border-line rounded-xl shadow-sm"
           style={{
             position: 'relative',
-            background: 'var(--bg-primary)',
-            border: '1px solid var(--border-default)',
-            borderRadius: radius,
             padding: '8px 12px',
             transform: isOpen ? 'translateX(-144px)' : 'translateX(0)',
-            transition: 'transform 200ms ease-out, border-color var(--transition)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            transition: 'transform 200ms ease-out',
           }}
           onMouseEnter={e => { if (!inPack) (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)' }}
           onMouseLeave={e => { if (!inPack) (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)' }}
