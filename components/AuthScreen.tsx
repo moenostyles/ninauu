@@ -1,51 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export default function AuthScreen() {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setMessage('')
-    setLoading(true)
-    if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({ email, password })
-      if (error) setError(error.message)
-      else setMessage('Check your email to confirm your account.')
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setError(error.message)
-    }
-    setLoading(false)
-  }
-
   const handleGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin },
     })
-  }
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    height: '44px',
-    background: 'var(--bg-tertiary)',
-    border: '1px solid var(--border-default)',
-    borderRadius: 'var(--radius-card)',
-    padding: '0 12px',
-    fontSize: 'var(--text-gear)',
-    color: 'var(--text-primary)',
-    outline: 'none',
-    transition: 'border-color var(--transition)',
-    boxSizing: 'border-box',
   }
 
   return (
@@ -76,7 +38,7 @@ export default function AuthScreen() {
           }}
         >
           {/* Wordmark */}
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <p style={{ fontSize: 'var(--text-logo)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
               Ninauu
             </p>
@@ -85,7 +47,12 @@ export default function AuthScreen() {
             </p>
           </div>
 
-          {/* Google CTA — 最も目立つ白ボタン */}
+          {/* Description */}
+          <p style={{ textAlign: 'center', fontSize: 'var(--text-weight)', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.5 }}>
+            Track your gear · Build packing lists · 900+ gear database
+          </p>
+
+          {/* Google CTA */}
           <button
             type="button"
             onClick={handleGoogle}
@@ -117,98 +84,9 @@ export default function AuthScreen() {
             Continue with Google
           </button>
 
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
-            <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-            <span style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)' }}>or</span>
-            <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-          </div>
-
-          {/* Sign In / Sign Up tab — underline style */}
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', marginBottom: '16px' }}>
-            {(['signin', 'signup'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setError(''); setMessage('') }}
-                style={{
-                  flex: 1,
-                  padding: '8px 0',
-                  fontSize: 'var(--text-weight)',
-                  fontWeight: mode === m ? 600 : 400,
-                  color: mode === m ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                  borderBottom: mode === m ? '2px solid var(--text-primary)' : '2px solid transparent',
-                  marginBottom: '-1px',
-                  background: 'none',
-                  border: 'none',
-                  borderBottomStyle: 'solid',
-                  borderBottomWidth: '2px',
-                  borderBottomColor: mode === m ? 'var(--text-primary)' : 'transparent',
-                  cursor: 'pointer',
-                  transition: 'color var(--transition)',
-                }}
-              >
-                {m === 'signin' ? 'Sign In' : 'Sign Up'}
-              </button>
-            ))}
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-              style={inputStyle}
-              onFocus={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
-              onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-default)')}
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-              style={inputStyle}
-              onFocus={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
-              onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-default)')}
-            />
-
-            {error && (
-              <p style={{ fontSize: 'var(--text-sub)', color: 'var(--color-destructive)', paddingLeft: '2px' }}>{error}</p>
-            )}
-            {message && (
-              <p style={{ fontSize: 'var(--text-sub)', color: 'var(--color-success)', paddingLeft: '2px' }}>{message}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                width: '100%',
-                height: '44px',
-                marginTop: '4px',
-                background: 'var(--bg-elevated)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-card)',
-                fontSize: 'var(--text-weight)',
-                fontWeight: 500,
-                cursor: loading ? 'default' : 'pointer',
-                opacity: loading ? 0.5 : 1,
-                transition: 'opacity var(--transition), border-color var(--transition)',
-              }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.borderColor = 'var(--border-strong)' }}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-default)')}
-            >
-              {loading ? '…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
-            </button>
-          </form>
-
-          {/* Tagline */}
-          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', letterSpacing: '0.02em' }}>
-            Track your gear · Build packing lists · 900+ gear database
+          {/* Footer */}
+          <p style={{ textAlign: 'center', marginTop: '24px', fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', letterSpacing: '0.02em' }}>
+            Sign in with your Google account
           </p>
         </div>
       </div>
