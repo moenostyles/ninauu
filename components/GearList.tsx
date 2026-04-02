@@ -96,11 +96,8 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     .filter(g => g.items.length > 0)
 
   // iOS-style grouped card: first=top-radius, last=bottom-radius, single=all-radius
-  const cardRadius = (idx: number, total: number): string => {
-    if (total === 1) return 'var(--radius-card)'
-    if (idx === 0)   return 'var(--radius-card) var(--radius-card) 0 0'
-    if (idx === total - 1) return '0 0 var(--radius-card) var(--radius-card)'
-    return '0'
+  const cardRadius = (): string => {
+    return 'var(--radius-card)'
   }
 
   const renderGearCard = (gear: Gear, idx: number, total: number) => {
@@ -108,7 +105,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
     const inPack      = !!entry
     const isOpen      = swipedId === gear.id
     const accentColor = PARENT_COLOR[parentOf(gear.category)] ?? 'var(--cat-others)'
-    const radius      = cardRadius(idx, total)
+    const radius      = cardRadius()
     const isLast      = idx === total - 1
 
     const onTouchStart = (e: React.TouchEvent) => {
