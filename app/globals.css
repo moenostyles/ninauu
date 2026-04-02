@@ -38,7 +38,7 @@
 
   /* ── Fonts ── */
   --font-sans: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+  --font-mono: monospace;
 
   /* ── Typography scale (11/12/13/14/18px only) ── */
   --text-logo:    18px;
