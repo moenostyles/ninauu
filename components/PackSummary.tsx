@@ -137,7 +137,7 @@ export default function PackSummary({ items, savedPacks, onRemove, onClearAll, o
                 </button>
               )}
             </div>
-            <p className="weight-mono" style={{ fontSize: '22px', fontWeight: 600, marginTop: '2px', lineHeight: 1, color: 'var(--text-primary)' }}>
+            <p style={{ fontSize: '22px', fontWeight: 600, marginTop: '2px', lineHeight: 1, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontVariantNumeric: 'tabular-nums' }}>
               {fmtWeight(totalWeight)}
             </p>
             <p style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', marginTop: '2px' }}>
@@ -161,7 +161,7 @@ export default function PackSummary({ items, savedPacks, onRemove, onClearAll, o
                   <p style={{ fontSize: 'var(--text-cat)', textTransform: 'uppercase', letterSpacing: '0.04em', color: c, opacity: bold ? 1 : 0.8, lineHeight: 1.2 }}>
                     {label}
                   </p>
-                  <p className="weight-mono" style={{ fontSize: 'var(--text-sub)', fontWeight: bold ? 600 : 400, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                  <p style={{ fontSize: 'var(--text-sub)', fontWeight: bold ? 600 : 400, color: 'var(--text-primary)', lineHeight: 1.3, fontFamily: 'var(--font-sans)', fontVariantNumeric: 'tabular-nums' }}>
                     {w > 0 ? fmtWeight(w) : '—'}
                   </p>
                 </div>

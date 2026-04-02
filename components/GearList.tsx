@@ -140,11 +140,11 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
     const weight = (
       <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '64px' }}>
-        <span className="weight-mono" style={{ color: 'var(--text-secondary)', display: 'block' }}>
+        <span style={{ color: 'var(--text-secondary)', display: 'block', fontFamily: 'var(--font-sans)', fontVariantNumeric: 'tabular-nums' }}>
           {inPack && entry.quantity > 1 ? fmt(gear.weight_g * entry.quantity) : fmt(gear.weight_g)}
         </span>
         {inPack && entry.quantity > 1 && (
-          <span className="weight-mono" style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', display: 'block', lineHeight: 1.2 }}>
+          <span style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', display: 'block', lineHeight: 1.2, fontFamily: 'var(--font-sans)', fontVariantNumeric: 'tabular-nums' }}>
             {fmt(gear.weight_g)}×{entry.quantity}
           </span>
         )}
@@ -245,29 +245,24 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
             </div>
 
             {/* Desktop stepper */}
-            {inPack && <div className="hidden sm:flex">{stepper}</div>}
+            {inPack && stepper}
 
             {/* Weight */}
             {weight}
 
-            {/* … mobile: slide toggle */}
+            {/* … menu button */}
             <button
-              className="sm:hidden"
-              style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+              style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, transition: 'color var(--transition), background var(--transition)' }}
               aria-label="More options"
-              onTouchEnd={(e) => { e.stopPropagation(); setSwipedId(isOpen ? null : gear.id) }}
-            >
-              <MoreHorizontal size={16} strokeWidth={2} />
-            </button>
-
-            {/* … desktop: hover-only */}
-            <button
-              className="hidden sm:flex"
-              style={{ width: '32px', height: '32px', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', color: 'transparent', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, transition: 'color var(--transition), background var(--transition)' }}
-              aria-label="More options"
-              onClick={(e) => openDesktopMenu(e, gear.id)}
-              onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'var(--bg-tertiary)' }}
-              onMouseLeave={e => { if (dropdownPos?.gearId !== gear.id) { e.currentTarget.style.color = 'transparent'; e.currentTarget.style.background = 'none' } }}
+              onClick={(e) => {
+                if (window.innerWidth < 640) {
+                  setSwipedId(isOpen ? null : gear.id)
+                } else {
+                  openDesktopMenu(e, gear.id)
+                }
+              }}
+              onMouseEnter={e => { if (window.innerWidth >= 640) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'var(--bg-tertiary)' } }}
+              onMouseLeave={e => { if (window.innerWidth >= 640 && dropdownPos?.gearId !== gear.id) { e.currentTarget.style.color = 'var(--text-tertiary)'; e.currentTarget.style.background = 'none' } }}
             >
               <MoreHorizontal size={16} strokeWidth={2} />
             </button>
@@ -344,7 +339,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="weight-mono" style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)' }}>
+                    <span style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)', fontVariantNumeric: 'tabular-nums' }}>
                       {fmt(totalWeight)}
                     </span>
                     <ChevronDown
