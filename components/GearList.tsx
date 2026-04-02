@@ -191,15 +191,16 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
         <div
           style={{
             position: 'relative',
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-subtle)',
+            background: 'var(--bg-primary)',
+            border: '1px solid var(--border-default)',
             borderRadius: radius,
             padding: '12px 16px',
             transform: isOpen ? 'translateX(-144px)' : 'translateX(0)',
             transition: 'transform 200ms ease-out, border-color var(--transition)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
           }}
-          onMouseEnter={e => { if (!inPack) (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)' }}
-          onMouseLeave={e => { if (!inPack) (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)' }}
+          onMouseEnter={e => { if (!inPack) (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)' }}
+          onMouseLeave={e => { if (!inPack) (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)' }}
         >
           {/* Left accent bar (checked items) */}
           {inPack && (
@@ -299,7 +300,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
 
       {/* Pack hint */}
       {showHint && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-card)', padding: '8px 12px', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-tertiary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-card)', padding: '8px 12px', marginBottom: '8px' }}>
           <span style={{ fontSize: 'var(--text-sub)', color: 'var(--text-tertiary)' }}>○  Tap the circle to add gear to your pack</span>
           <button onClick={dismissHint} aria-label="Dismiss hint" style={{ marginLeft: '8px', flexShrink: 0, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', padding: 0 }}>
             <X size={12} strokeWidth={2} />
@@ -333,7 +334,7 @@ export default function GearList({ gears, packItems, onTogglePack, onUpdateQuant
                     <span style={{ fontSize: 'var(--text-cat)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       {parent}
                     </span>
-                    <span style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', background: 'var(--bg-elevated)', borderRadius: '999px', padding: '1px 6px' }}>
+                    <span style={{ fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', background: 'var(--bg-tertiary)', borderRadius: '999px', padding: '1px 6px' }}>
                       {items.length}
                     </span>
                     {checkedCount > 0 && (

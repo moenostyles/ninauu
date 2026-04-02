@@ -124,7 +124,7 @@ export default function Header() {
               width: '28px', height: '28px',
               borderRadius: '50%',
               overflow: 'hidden',
-              background: 'var(--bg-elevated)',
+              background: 'var(--bg-tertiary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
               border: '1px solid var(--border-default)',

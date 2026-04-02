@@ -68,10 +68,11 @@ export default function AuthScreen() {
         {/* Card */}
         <div
           style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-subtle)',
+            background: 'var(--bg-primary)',
+            border: '1px solid var(--border-default)',
             borderRadius: 'var(--radius-panel)',
             padding: '32px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
           }}
         >
           {/* Wordmark */}
