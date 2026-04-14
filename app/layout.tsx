@@ -35,13 +35,13 @@ export const metadata: Metadata = {
     url: APP_URL,
     siteName: 'Ninauu',
     type: 'website',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Ninauu — Ultralight Gear Manager' }],
+    // og:image は app/opengraph-image.tsx が自動生成
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Ninauu — Ultralight Gear Manager',
     description: OG_DESCRIPTION,
-    images: ['/og-image.png'],
+    // twitter:image は app/opengraph-image.tsx から自動検出
   },
   appleWebApp: {
     capable: true,
