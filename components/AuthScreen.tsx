@@ -234,10 +234,7 @@ export default function AuthScreen() {
             </>
           )}
 
-          {/* Footer */}
-          <p style={{ textAlign: 'center', marginTop: '24px', fontSize: 'var(--text-cat)', color: 'var(--text-tertiary)', letterSpacing: '0.02em' }}>
-            {showEmail ? 'We\'ll send you a login link' : 'Sign in with your Google account'}
-          </p>
+
         </div>
       </div>
     </div>
